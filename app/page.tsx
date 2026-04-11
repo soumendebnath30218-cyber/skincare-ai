@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-type AfterCapturePhase = "setup" | "analyzing" | "report";
+type AfterCapturePhase = "setup" | "analyzing" | "result";
+
+type AnalyzeSkinResponse = { analysis?: string; error?: string };
 
 /** Shown for any analysis failure — never surface API or model details to users. */
 const SKIN_ANALYSIS_FAILURE_MESSAGE =
@@ -123,13 +125,13 @@ export default function Home() {
           signal: ac.signal,
         });
 
-        let data: { analysis?: string };
+        let data: AnalyzeSkinResponse;
         try {
-          data = (await res.json()) as { analysis?: string };
+          data = (await res.json()) as AnalyzeSkinResponse;
         } catch {
           if (!ac.signal.aborted) {
             setAnalysisError(SKIN_ANALYSIS_FAILURE_MESSAGE);
-            setAfterCapture("report");
+            setAfterCapture("result");
           }
           return;
         }
@@ -138,17 +140,17 @@ export default function Home() {
 
         if (!res.ok || !data.analysis?.trim()) {
           setAnalysisError(SKIN_ANALYSIS_FAILURE_MESSAGE);
-          setAfterCapture("report");
+          setAfterCapture("result");
           return;
         }
 
         setSkinAnalysis(data.analysis.trim());
-        setAfterCapture("report");
+        setAfterCapture("result");
       } catch (e) {
         if (e instanceof DOMException && e.name === "AbortError") return;
         if (ac.signal.aborted) return;
         setAnalysisError(SKIN_ANALYSIS_FAILURE_MESSAGE);
-        setAfterCapture("report");
+        setAfterCapture("result");
       }
     },
     [stopStream],
@@ -280,7 +282,7 @@ export default function Home() {
   const showLiveCamera = stream && !uploadFallback && afterCapture === "setup";
   const showUploadPanel =
     afterCapture === "setup" && (uploadFallback || !stream) && !isStartingCamera;
-  const showResultStages = afterCapture === "analyzing" || afterCapture === "report";
+  const showResultStages = afterCapture === "analyzing" || afterCapture === "result";
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#030306] text-zinc-100">
@@ -547,7 +549,7 @@ export default function Home() {
                     )}
                   </div>
 
-                  {afterCapture === "report" && (
+                  {afterCapture === "result" && (
                     <div className="space-y-4">
                       <div className="rounded-xl border border-white/10 bg-zinc-900/60 p-4 sm:p-5">
                         <h3 className="text-xs font-semibold uppercase tracking-wider text-cyan-400/90">
