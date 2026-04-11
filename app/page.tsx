@@ -2,7 +2,50 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-type AfterCapturePhase = "setup" | "analyzing" | "payment";
+type AfterCapturePhase = "setup" | "analyzing" | "report";
+
+/** Shown for any analysis failure — never surface API or model details to users. */
+const SKIN_ANALYSIS_FAILURE_MESSAGE =
+  "Analysis failed due to high server traffic. Please try again or check your internet connection.";
+
+function compressImageDataUrl(
+  dataUrl: string,
+  maxDimension = 1280,
+  quality = 0.85,
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let width = img.naturalWidth;
+      let height = img.naturalHeight;
+      if (width <= 0 || height <= 0) {
+        reject(new Error("Invalid image dimensions"));
+        return;
+      }
+      if (width > maxDimension || height > maxDimension) {
+        if (width >= height) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        } else {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Could not get canvas context"));
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = () => reject(new Error("Could not load image"));
+    img.src = dataUrl;
+  });
+}
 
 async function hasVideoInputDevice(): Promise<boolean> {
   if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) {
@@ -24,10 +67,12 @@ export default function Home() {
   const [uploadFallback, setUploadFallback] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [afterCapture, setAfterCapture] = useState<AfterCapturePhase>("setup");
+  const [skinAnalysis, setSkinAnalysis] = useState<string | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const analysisTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const analysisAbortRef = useRef<AbortController | null>(null);
 
   const stopStream = useCallback(() => {
     setStream((prev) => {
@@ -36,15 +81,9 @@ export default function Home() {
     });
   }, []);
 
-  const clearAnalysisTimer = useCallback(() => {
-    if (analysisTimerRef.current) {
-      clearTimeout(analysisTimerRef.current);
-      analysisTimerRef.current = null;
-    }
-  }, []);
-
   const closeScanner = useCallback(() => {
-    clearAnalysisTimer();
+    analysisAbortRef.current?.abort();
+    analysisAbortRef.current = null;
     stopStream();
     setScannerOpen(false);
     setCameraError(null);
@@ -52,25 +91,72 @@ export default function Home() {
     setUploadFallback(false);
     setCapturedImage(null);
     setAfterCapture("setup");
+    setSkinAnalysis(null);
+    setAnalysisError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
-  }, [clearAnalysisTimer, stopStream]);
+  }, [stopStream]);
 
   const beginAnalysisSequence = useCallback(
-    (dataUrl: string) => {
-      clearAnalysisTimer();
+    async (dataUrl: string) => {
+      analysisAbortRef.current?.abort();
+      const ac = new AbortController();
+      analysisAbortRef.current = ac;
+
       stopStream();
       setCapturedImage(dataUrl);
+      setSkinAnalysis(null);
+      setAnalysisError(null);
       setAfterCapture("analyzing");
-      analysisTimerRef.current = setTimeout(() => {
-        setAfterCapture("payment");
-        analysisTimerRef.current = null;
-      }, 3000);
+
+      let payload = dataUrl;
+      try {
+        payload = await compressImageDataUrl(dataUrl);
+      } catch {
+        /* use original if resize fails */
+      }
+
+      try {
+        const res = await fetch("/api/analyze-skin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: payload }),
+          signal: ac.signal,
+        });
+
+        let data: { analysis?: string };
+        try {
+          data = (await res.json()) as { analysis?: string };
+        } catch {
+          if (!ac.signal.aborted) {
+            setAnalysisError(SKIN_ANALYSIS_FAILURE_MESSAGE);
+            setAfterCapture("report");
+          }
+          return;
+        }
+
+        if (ac.signal.aborted) return;
+
+        if (!res.ok || !data.analysis?.trim()) {
+          setAnalysisError(SKIN_ANALYSIS_FAILURE_MESSAGE);
+          setAfterCapture("report");
+          return;
+        }
+
+        setSkinAnalysis(data.analysis.trim());
+        setAfterCapture("report");
+      } catch (e) {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        if (ac.signal.aborted) return;
+        setAnalysisError(SKIN_ANALYSIS_FAILURE_MESSAGE);
+        setAfterCapture("report");
+      }
     },
-    [clearAnalysisTimer, stopStream],
+    [stopStream],
   );
 
   const openScannerUploadOnly = useCallback(() => {
-    clearAnalysisTimer();
+    analysisAbortRef.current?.abort();
+    analysisAbortRef.current = null;
     setScannerOpen(true);
     setCameraError(null);
     setStream(null);
@@ -78,15 +164,20 @@ export default function Home() {
     setUploadFallback(true);
     setCapturedImage(null);
     setAfterCapture("setup");
+    setSkinAnalysis(null);
+    setAnalysisError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
-  }, [clearAnalysisTimer]);
+  }, []);
 
   const openScannerWithCamera = useCallback(async () => {
-    clearAnalysisTimer();
+    analysisAbortRef.current?.abort();
+    analysisAbortRef.current = null;
     setScannerOpen(true);
     setCameraError(null);
     setCapturedImage(null);
     setAfterCapture("setup");
+    setSkinAnalysis(null);
+    setAnalysisError(null);
     setUploadFallback(false);
     setIsStartingCamera(true);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -129,7 +220,7 @@ export default function Home() {
     } finally {
       setIsStartingCamera(false);
     }
-  }, [clearAnalysisTimer]);
+  }, []);
 
   useEffect(() => {
     const el = videoRef.current;
@@ -156,8 +247,8 @@ export default function Home() {
   }, [scannerOpen, closeScanner]);
 
   useEffect(() => {
-    return () => clearAnalysisTimer();
-  }, [clearAnalysisTimer]);
+    return () => analysisAbortRef.current?.abort();
+  }, []);
 
   const takePhoto = useCallback(() => {
     const video = videoRef.current;
@@ -189,7 +280,7 @@ export default function Home() {
   const showLiveCamera = stream && !uploadFallback && afterCapture === "setup";
   const showUploadPanel =
     afterCapture === "setup" && (uploadFallback || !stream) && !isStartingCamera;
-  const showResultStages = afterCapture === "analyzing" || afterCapture === "payment";
+  const showResultStages = afterCapture === "analyzing" || afterCapture === "report";
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#030306] text-zinc-100">
@@ -436,7 +527,7 @@ export default function Home() {
                       className="max-h-[min(360px,50vh)] w-full object-contain"
                     />
                     {afterCapture === "analyzing" && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/65 backdrop-blur-[2px]">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/70 backdrop-blur-sm">
                         <div className="flex gap-1.5" aria-hidden>
                           {[0, 1, 2].map((i) => (
                             <span
@@ -447,31 +538,65 @@ export default function Home() {
                           ))}
                         </div>
                         <p className="text-sm font-medium tracking-wide text-white">
-                          AI Analyzing…
+                          Analyzing your skin…
                         </p>
-                        <p className="max-w-[240px] text-center text-xs text-zinc-400">
-                          Mapping tone, texture, and zones
+                        <p className="max-w-[260px] text-center text-xs text-zinc-400">
+                          Reviewing tone, texture, and visible concerns
                         </p>
                       </div>
                     )}
                   </div>
 
-                  {afterCapture === "payment" && (
-                    <div className="flex flex-col items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5 text-center">
-                      <p className="text-sm font-medium text-emerald-200/90">
-                        Your snapshot is ready
-                      </p>
-                      <p className="text-xs text-zinc-500">
-                        Unlock the full AI report and personalized routine.
-                      </p>
-                      <a
-                        href="https://gumroad.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-1 inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-emerald-500 to-cyan-500 px-6 py-3 text-sm font-semibold text-zinc-950 shadow-[0_0_24px_rgba(52,211,153,0.25)] transition hover:brightness-110 sm:max-w-xs"
-                      >
-                        $9.99 Unlock Report
-                      </a>
+                  {afterCapture === "report" && (
+                    <div className="space-y-4">
+                      <div className="rounded-xl border border-white/10 bg-zinc-900/60 p-4 sm:p-5">
+                        <h3 className="text-xs font-semibold uppercase tracking-wider text-cyan-400/90">
+                          Your skin analysis
+                        </h3>
+                        {analysisError ? (
+                          <div className="mt-3 space-y-3">
+                            <p className="text-sm leading-relaxed text-red-300">
+                              {analysisError}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAfterCapture("setup");
+                                setSkinAnalysis(null);
+                                setAnalysisError(null);
+                                setCapturedImage(null);
+                              }}
+                              className="text-sm font-medium text-cyan-400 underline-offset-2 hover:underline"
+                            >
+                              Try again
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="mt-3 max-h-[min(280px,45vh)] overflow-y-auto text-sm leading-relaxed whitespace-pre-wrap text-zinc-300">
+                            {skinAnalysis}
+                          </div>
+                        )}
+                      </div>
+
+                      {!analysisError && (
+                        <div className="flex flex-col items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5 text-center">
+                          <p className="text-sm font-medium text-emerald-200/90">
+                            Want the full routine breakdown?
+                          </p>
+                          <p className="text-xs text-zinc-500">
+                            Unlock step-by-step AM/PM guidance and product-style
+                            suggestions.
+                          </p>
+                          <a
+                            href="https://gumroad.com"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-1 inline-flex w-full items-center justify-center rounded-full bg-linear-to-r from-emerald-500 to-cyan-500 px-6 py-3 text-sm font-semibold text-zinc-950 shadow-[0_0_24px_rgba(52,211,153,0.25)] transition hover:brightness-110 sm:max-w-xs"
+                          >
+                            $9.99 Unlock Report
+                          </a>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
