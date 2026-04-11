@@ -320,7 +320,7 @@ export default function Home() {
       {/* Scanner modal */}
       {scannerOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+          className="fixed inset-0 z-50 flex items-center justify-center px-2 py-3 sm:p-6"
           role="dialog"
           aria-modal="true"
           aria-labelledby="scanner-title"
@@ -331,8 +331,8 @@ export default function Home() {
             aria-label="Close scanner"
             onClick={closeScanner}
           />
-          <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/95 shadow-[0_0_80px_rgba(34,211,238,0.12)] backdrop-blur-xl">
-            <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+          <div className="relative z-10 w-full max-w-[min(100%,calc(100vw-1rem))] sm:max-w-2xl md:max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/95 shadow-[0_0_80px_rgba(34,211,238,0.12)] backdrop-blur-xl">
+            <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 sm:px-5 sm:py-4">
               <h2 id="scanner-title" className="text-lg font-semibold text-white">
                 Face scan
               </h2>
@@ -348,13 +348,13 @@ export default function Home() {
               </button>
             </div>
 
-            <div className="p-5">
-              {/* Setup: live camera or upload */}
+            <div className="p-3 sm:p-5">
+              {/* Setup: live camera or upload — portrait frame, near full width on mobile */}
               {afterCapture === "setup" && (
                 <>
-                  <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black ring-1 ring-white/10">
+                  <div className="relative mx-auto aspect-[3/4] w-full max-h-[min(85vh,800px)] overflow-hidden rounded-xl bg-black ring-1 ring-white/10">
                     {isStartingCamera && !uploadFallback && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-zinc-900/90">
+                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-zinc-900/90">
                         <div className="h-10 w-10 animate-spin rounded-full border-2 border-cyan-400/30 border-t-cyan-400" />
                         <p className="text-sm text-zinc-400">Requesting camera access…</p>
                       </div>
@@ -363,7 +363,7 @@ export default function Home() {
                     {showLiveCamera && (
                       <video
                         ref={videoRef}
-                        className="h-full w-full object-cover"
+                        className="absolute inset-0 h-full w-full object-cover object-center"
                         playsInline
                         muted
                         autoPlay
