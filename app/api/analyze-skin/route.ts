@@ -9,33 +9,33 @@ export async function POST(req: Request) {
     const { image } = await req.json();
     const base64Data = image.split(",")[1];
 
-    // const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    // const result = await model.generateContent([
-    //   {
-    //     inlineData: {
-    //       data: base64Data,
-    //       mimeType: "image/jpeg",
-    //     },
-    //   },
-    //   "Act as a professional dermatologist. Analyze this skin image and provide a 3-line report.",
-    // ]);
+    const result = await model.generateContent([
+      {
+        inlineData: {
+          data: base64Data,
+          mimeType: "image/jpeg",
+        },
+      },
+      "Act as a professional dermatologist. Analyze this skin image and provide a 3-line report.",
+    ]);
 
-    // const response = await result.response;
-    // return new Response(JSON.stringify({ analysis: response.text() }), {
-    //   status: 200,
-    //   headers: { 'Content-Type': 'application/json' },
-    // });
+    const response = await result.response;
+    return new Response(JSON.stringify({ analysis: response.text() }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
 
 
 
 // ✅ ডামি রেসপন্স (API লিমিট এড়ানোর জন্য)
-return new Response(JSON.stringify({ 
-    analysis: "এটি একটি ডামি রেজাল্ট। স্কিন ইমেজে হালকা ব্রণ দেখা যাচ্ছে, পরিমিত জল পান করুন। আপাতত ফ্রন্টএন্ডের ডিজাইন টেস্টিং চলছে..." 
-  }), { 
-    status: 200,
-    headers: { 'Content-Type': 'application/json' }
-  });
+// return new Response(JSON.stringify({ 
+//     analysis: "এটি একটি ডামি রেজাল্ট। স্কিন ইমেজে হালকা ব্রণ দেখা যাচ্ছে, পরিমিত জল পান করুন। আপাতত ফ্রন্টএন্ডের ডিজাইন টেস্টিং চলছে..." 
+//   }), { 
+//     status: 200,
+//     headers: { 'Content-Type': 'application/json' }
+//   });
 
 
 
