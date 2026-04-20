@@ -1,0 +1,221 @@
+"use client";
+
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useUser, UserButton, SignOutButton } from "@clerk/nextjs";
+import { 
+  User, 
+  Bell, 
+  CreditCard, 
+  Shield, 
+  Trash2, 
+  CheckCircle2, 
+  LogOut, 
+  Sparkles,
+  Mail
+} from "lucide-react";
+
+export default function SettingsPage() {
+  const router = useRouter();
+  const { isLoaded, isSignedIn, user } = useUser();
+  
+  // Tab System State
+  const [activeTab, setActiveTab] = useState("profile");
+  
+  // Notification States
+  const [emailNotif, setEmailNotif] = useState(true);
+  const [pushNotif, setPushNotif] = useState(true);
+  
+  // Save Button State
+  const [isSaved, setIsSaved] = useState(false);
+
+  if (!isLoaded || !isSignedIn) return null;
+
+  const handleClearData = () => {
+    // 🌟 FIX: ব্রাউজারের লোকাল স্টোরেজ থেকে স্ক্যানের ডেটা মুছে ফেলা হলো 🌟
+    localStorage.removeItem("glow_analysis");
+    localStorage.removeItem("glow_image");
+    
+    // ডেটা মুছে একদম নতুন করে স্ক্যান করার জন্য আপলোড পেজে পাঠিয়ে দেওয়া হলো
+    router.push("/upload"); 
+  };
+
+  const handleSave = () => {
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 2000);
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-20 p-6 md:p-10">
+      
+      {/* Page Header */}
+      <header className="flex items-center justify-between">
+        <div>
+           <h2 className="text-3xl font-black text-white tracking-tight uppercase italic">Settings</h2>
+           <p className="text-zinc-500 mt-2 text-sm uppercase tracking-widest font-bold text-[10px]">Manage your aesthetic profile & preferences</p>
+        </div>
+        <UserButton />
+      </header>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        
+        {/* Left Sidebar (Interactive Navigation) */}
+        <div className="space-y-2">
+           <button 
+             onClick={() => setActiveTab("profile")}
+             className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all border ${activeTab === "profile" ? "bg-cyan-500/10 text-white border-cyan-500/20 shadow-[0_0_20px_rgba(34,211,238,0.1)]" : "text-zinc-500 hover:bg-white/5 border-transparent"}`}
+           >
+             <User className={`w-4 h-4 ${activeTab === "profile" ? "text-cyan-400" : ""}`} /> Profile
+           </button>
+           
+           <button 
+             onClick={() => setActiveTab("billing")}
+             className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all border ${activeTab === "billing" ? "bg-cyan-500/10 text-white border-cyan-500/20 shadow-[0_0_20px_rgba(34,211,238,0.1)]" : "text-zinc-500 hover:bg-white/5 border-transparent"}`}
+           >
+             <CreditCard className={`w-4 h-4 ${activeTab === "billing" ? "text-cyan-400" : ""}`} /> Subscription
+           </button>
+           
+           <button 
+             onClick={() => setActiveTab("notifications")}
+             className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all border ${activeTab === "notifications" ? "bg-cyan-500/10 text-white border-cyan-500/20 shadow-[0_0_20px_rgba(34,211,238,0.1)]" : "text-zinc-500 hover:bg-white/5 border-transparent"}`}
+           >
+             <Bell className={`w-4 h-4 ${activeTab === "notifications" ? "text-cyan-400" : ""}`} /> Notifications
+           </button>
+           
+           <button 
+             onClick={() => setActiveTab("security")}
+             className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all border ${activeTab === "security" ? "bg-cyan-500/10 text-white border-cyan-500/20 shadow-[0_0_20px_rgba(34,211,238,0.1)]" : "text-zinc-500 hover:bg-white/5 border-transparent"}`}
+           >
+             <Shield className={`w-4 h-4 ${activeTab === "security" ? "text-cyan-400" : ""}`} /> Privacy
+           </button>
+
+           <div className="pt-4 border-t border-white/5 mt-4">
+              <SignOutButton>
+                <button className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-rose-500 hover:bg-rose-500/10 transition-all">
+                  <LogOut className="w-4 h-4" /> Sign Out
+                </button>
+              </SignOutButton>
+           </div>
+        </div>
+
+        {/* Right Content Area */}
+        <div className="md:col-span-2 space-y-8">
+          
+          {/* PROFILE TAB (Live Data from Clerk) */}
+          {activeTab === "profile" && (
+            <div className="p-8 rounded-[2.5rem] border border-white/5 bg-zinc-950/50 shadow-xl animate-in fade-in duration-500">
+               <div className="flex items-center gap-6 mb-8">
+                  <img src={user.imageUrl} className="w-20 h-20 rounded-full border-2 border-cyan-500/20" />
+                  <div>
+                    <h3 className="text-xl font-black text-white">{user.fullName}</h3>
+                    <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold mt-1">Free Tier Explorer</p>
+                  </div>
+               </div>
+
+               <div className="space-y-6">
+                  <div>
+                      <label className="text-[10px] uppercase font-bold text-zinc-600 tracking-widest block mb-2 ml-1">Full Name</label>
+                      <div className="w-full bg-black/40 border border-white/5 rounded-2xl px-4 py-4 text-zinc-300 flex items-center gap-3">
+                        <User className="w-4 h-4 text-zinc-600" />
+                        {user.fullName}
+                      </div>
+                  </div>
+                  <div>
+                      <label className="text-[10px] uppercase font-bold text-zinc-600 tracking-widest block mb-2 ml-1">Email Identity</label>
+                      <div className="w-full bg-black/40 border border-white/5 rounded-2xl px-4 py-4 text-zinc-300 flex items-center gap-3">
+                        <Mail className="w-4 h-4 text-zinc-600" />
+                        {user.primaryEmailAddress?.emailAddress}
+                      </div>
+                  </div>
+               </div>
+               
+               <div className="mt-8 p-4 rounded-2xl bg-cyan-500/5 border border-cyan-500/10 flex items-center gap-3">
+                  <Sparkles className="w-5 h-5 text-cyan-400" />
+                  <p className="text-xs text-zinc-400">Profile data is managed via <span className="text-white font-bold">Clerk Identity</span> for top-tier security.</p>
+               </div>
+            </div>
+          )}
+
+          {/* BILLING TAB */}
+          {activeTab === "billing" && (
+            <div className="p-8 rounded-[2.5rem] border border-cyan-500/20 bg-gradient-to-br from-cyan-950/20 to-zinc-950 shadow-xl animate-in fade-in duration-500">
+               <div className="flex justify-between items-center mb-8">
+                 <h3 className="text-xs font-bold uppercase tracking-widest text-cyan-400">Subscription Status</h3>
+                 <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">Trial Active</span>
+               </div>
+               <div className="space-y-6">
+                  <div>
+                    <p className="text-3xl font-black text-white italic">Free Evolution</p>
+                    <p className="text-xs text-zinc-500 mt-2 leading-relaxed">You are currently on the free version. Upgrade to <span className="text-white font-bold">GlowAI Pro</span> to unlock unlimited biometric scans and detailed AI skincare routines.</p>
+                  </div>
+                  <button className="w-full py-4 rounded-2xl bg-white text-black font-black uppercase tracking-widest text-xs hover:bg-cyan-400 transition-colors shadow-[0_10px_20px_rgba(255,255,255,0.05)]">
+                     Upgrade to Pro ($9.99/mo)
+                  </button>
+               </div>
+            </div>
+          )}
+
+          {/* NOTIFICATIONS TAB */}
+          {activeTab === "notifications" && (
+            <div className="p-8 rounded-[2.5rem] border border-white/5 bg-zinc-950/50 shadow-xl animate-in fade-in duration-500 space-y-4">
+               <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-6">Engagement Preferences</h3>
+               
+               <div className="flex items-center justify-between p-5 rounded-2xl border border-white/5 bg-black/40">
+                  <div>
+                    <p className="text-sm font-bold text-white tracking-tight">Daily Protocol Alerts</p>
+                    <p className="text-[10px] text-zinc-500 uppercase mt-1">Push notifications for routines</p>
+                  </div>
+                  <button 
+                    onClick={() => setPushNotif(!pushNotif)} 
+                    className={`w-12 h-6 rounded-full transition-all relative flex items-center ${pushNotif ? 'bg-cyan-500 shadow-[0_0_15px_rgba(34,211,238,0.4)]' : 'bg-zinc-800'}`}
+                  >
+                    <div className={`w-4 h-4 rounded-full bg-white absolute transition-transform ${pushNotif ? 'translate-x-7' : 'translate-x-1'}`} />
+                  </button>
+               </div>
+
+               <div className="flex items-center justify-between p-5 rounded-2xl border border-white/5 bg-black/40">
+                  <div>
+                    <p className="text-sm font-bold text-white tracking-tight">Weekly Skin Insights</p>
+                    <p className="text-[10px] text-zinc-500 uppercase mt-1">Deep analysis via email</p>
+                  </div>
+                  <button 
+                    onClick={() => setEmailNotif(!emailNotif)} 
+                    className={`w-12 h-6 rounded-full transition-all relative flex items-center ${emailNotif ? 'bg-cyan-500 shadow-[0_0_15px_rgba(34,211,238,0.4)]' : 'bg-zinc-800'}`}
+                  >
+                    <div className={`w-4 h-4 rounded-full bg-white absolute transition-transform ${emailNotif ? 'translate-x-7' : 'translate-x-1'}`} />
+                  </button>
+               </div>
+            </div>
+          )}
+
+          {/* PRIVACY TAB */}
+          {activeTab === "security" && (
+            <div className="space-y-6 animate-in fade-in duration-500">
+              <div className="p-8 rounded-[2.5rem] border border-white/5 bg-zinc-950/50">
+                 <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-4">Biometric Data Policy</h3>
+                 <p className="text-sm text-zinc-400 leading-relaxed">All skin analysis photos are processed with <span className="text-white">End-to-End Encryption</span>. We do not sell your biometric signatures to third parties.</p>
+              </div>
+
+              <div className="p-8 rounded-[2.5rem] border border-rose-500/20 bg-rose-950/5">
+                 <h3 className="text-xs font-bold uppercase tracking-widest text-rose-500 mb-2">Danger Zone</h3>
+                 <p className="text-[10px] text-zinc-500 uppercase font-bold mb-6">Irreversible Account Actions</p>
+                 
+                 <button 
+                   onClick={handleClearData}
+                   className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-rose-500/10 text-rose-500 font-bold hover:bg-rose-500 hover:text-white transition-all border border-rose-500/20 text-xs uppercase tracking-widest"
+                 >
+                    <Trash2 className="w-4 h-4" /> Reset Evolution Data
+                 </button>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
+      
+      <p className="text-center text-[9px] text-zinc-800 uppercase tracking-[0.5em] font-black pt-10">
+         GlowAI Protocol v1.5 • Secure Biometric ID: {user.id.slice(0,10)}...
+      </p>
+    </div>
+  );
+}
