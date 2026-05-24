@@ -171,7 +171,7 @@ export default function SupportPage() {
             <div className="mt-10 p-6 rounded-2xl border border-dashed border-zinc-700 bg-zinc-900/30 text-center">
               <p className="text-xs text-zinc-500 uppercase tracking-widest font-bold mb-2">Enterprise Support</p>
               <p className="text-sm text-zinc-400">
-                Are you a dermatology clinic looking to integrate GlowAI? <a href="#" className="text-cyan-400 hover:underline">Contact our sales team</a>.
+                Are you a dermatology clinic looking to integrate GlowryAI? <a href="#" className="text-cyan-400 hover:underline">Contact our sales team</a>.
               </p>
             </div>
           </div>

@@ -9,7 +9,7 @@ export default function Header() {
   return (
     <header className="relative z-40 mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-8 sm:px-8">
       <span className="text-lg font-semibold tracking-tight">
-        <span className="bg-gradient-to-r from-cyan-200 to-emerald-300 bg-clip-text text-transparent uppercase tracking-tighter font-bold">GlowAI</span>
+        <span className="bg-gradient-to-r from-cyan-200 to-emerald-300 bg-clip-text text-transparent uppercase tracking-tighter font-bold">GlowryAI</span>
       </span>
 
       <div className="flex items-center gap-4">

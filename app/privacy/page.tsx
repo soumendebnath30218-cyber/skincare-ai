@@ -99,7 +99,7 @@ export default function LegalPoliciesPage() {
                 <h2 className="text-2xl font-black text-white italic uppercase">Terms of Service</h2>
               </div>
               <p className="text-sm leading-relaxed text-zinc-400">
-                By using GlowAI, you agree to not upload any offensive, illegal, or non-human images. Our AI is explicitly trained and designed strictly for facial aesthetic analysis.
+                By using GlowryAI, you agree to not upload any offensive, illegal, or non-human images. Our AI is explicitly trained and designed strictly for facial aesthetic analysis.
               </p>
               <div className="bg-rose-500/10 border border-rose-500/20 p-5 rounded-2xl">
                 <h4 className="text-rose-400 font-black italic uppercase mb-3 flex items-center gap-2">
@@ -149,7 +149,7 @@ export default function LegalPoliciesPage() {
 
         {/* Footer */}
         <div className="mt-12 text-center flex flex-col items-center gap-4">
-          <a href="mailto:support@glowai.com" className="text-[10px] text-zinc-500 hover:text-cyan-400 uppercase tracking-widest font-bold transition-colors">
+          <a href="mailto:support@glowairy.com" className="text-[10px] text-zinc-500 hover:text-cyan-400 uppercase tracking-widest font-bold transition-colors">
             Contact Legal Support
           </a>
           <p className="text-[10px] text-zinc-700 uppercase tracking-[0.3em] font-bold">
