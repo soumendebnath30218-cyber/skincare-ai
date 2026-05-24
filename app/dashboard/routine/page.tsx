@@ -1,242 +1,291 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@clerk/nextjs";
 import { createClient } from "@supabase/supabase-js";
-import { ExternalLink, Moon, Sun, ShieldCheck, Info, Loader2, Camera } from "lucide-react";
-import Link from "next/link";
+import { 
+  Sparkles, 
+  Leaf, 
+  Sun, 
+  Clock, 
+  Info, 
+  Droplets,
+  CheckCircle2,
+  ChevronDown 
+} from "lucide-react";
 
-// 🌟 Supabase কানেকশন 🌟
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseKey);
+// 🌟 Supabase Setup 🌟
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL as string,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
+);
 
-type RoutineItem = {
-  step: string;
-  name: string;
-  ingredient: string;
-  purpose: string;
-  link: string;
-};
-
-export default function GlowProtocolPage() {
-  const { isLoaded, isSignedIn, user } = useUser();
-  const [isLoading, setIsLoading] = useState(true);
-  const [flaws, setFlaws] = useState<string[]>([]);
-  const [amRoutine, setAmRoutine] = useState<RoutineItem[]>([]);
-  const [pmRoutine, setPmRoutine] = useState<RoutineItem[]>([]);
+export default function NaturalRoutinePage() {
+  const { userId } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [masterPlan, setMasterPlan] = useState<any>(null);
+  const [localAiRoutine, setLocalAiRoutine] = useState<any>(null); 
+  const [expandedRoutineItem, setExpandedRoutineItem] = useState<number | null>(null); 
 
   useEffect(() => {
-    const fetchUserFlaws = async () => {
-      if (!user) return;
+    if (!userId) return;
+
+    async function fetchData() {
       try {
-        // 🌟 FIX: Fetching from user_scans, requesting 'problems', and removed .single() 🌟
-        const { data: dbData, error } = await supabase
-          .from("user_scans")
-          .select("problems")
-          .eq("user_id", user.id)
+        const { data: masterData } = await supabase
+          .from("master_glow_plans")
+          .select("*")
+          .eq("user_id", userId)
+          .single();
+
+        if (masterData) setMasterPlan(masterData);
+
+        // 🚨 MAGIC FIX: Changed from 'user_scans' to 'daily_scans' 🚨
+        const { data: scanData } = await supabase
+          .from("daily_scans")
+          .select("analysis_result")
+          .eq("user_id", userId)
           .order("created_at", { ascending: false })
           .limit(1);
 
-        if (dbData && dbData.length > 0) {
-          const latestData = dbData[0];
-          
-          // JSONB ডেটা ঠিকঠাক হ্যান্ডেল করার জন্য সেফটি লজিক
-          let parsedFlaws: string[] = [];
-          try {
-            if (Array.isArray(latestData.problems)) {
-              parsedFlaws = latestData.problems;
-            } else if (typeof latestData.problems === 'string') {
-              parsedFlaws = JSON.parse(latestData.problems);
-            }
-          } catch (e) {
-            parsedFlaws = [];
-          }
+        let aiRoutine = null;
 
-          setFlaws(parsedFlaws);
-          generateDynamicRoutine(parsedFlaws);
-        } else if (error) {
-          console.error("Database fetch error:", error);
+        if (scanData && scanData.length > 0 && scanData[0].analysis_result) {
+           try {
+              const parsedScan = JSON.parse(scanData[0].analysis_result);
+              if (parsedScan.routine) aiRoutine = parsedScan.routine;
+           } catch(e) {}
         }
+
+        if (!aiRoutine) {
+            const savedAnalysis = localStorage.getItem("glow_analysis");
+            if (savedAnalysis) {
+                try {
+                    const parsedLocal = JSON.parse(savedAnalysis);
+                    if (parsedLocal.routine) aiRoutine = parsedLocal.routine;
+                    else if (parsedLocal.raw) {
+                        let cleanText = parsedLocal.raw.replace(/[\`]{3}json/gi, "").replace(/[\`]{3}/g, "").trim();
+                        const parsedRaw = JSON.parse(cleanText);
+                        if (parsedRaw.routine) aiRoutine = parsedRaw.routine;
+                    }
+                } catch(e) {}
+            }
+        }
+
+        if (aiRoutine) setLocalAiRoutine(aiRoutine);
+
       } catch (err) {
-        console.error("Error fetching flaws:", err);
+        console.error("Error fetching data:", err);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
-    };
-
-    if (isLoaded && user) {
-      fetchUserFlaws();
-    }
-  }, [isLoaded, user]);
-
-  // 🌟 ইউজারের স্ক্যান করা সমস্যার ওপর ভিত্তি করে প্রোডাক্ট সাজানোর লজিক 🌟
-  const generateDynamicRoutine = (userFlaws: string[]) => {
-    const flawsText = userFlaws.join(" ").toLowerCase();
-    
-    // AM Routine (সকালের রুটিন)
-    const newAm: RoutineItem[] = [
-      { step: "01", name: "Hydrating Gentle Cleanser", ingredient: "Hyaluronic Acid + Ceramides", purpose: "Removes nighttime oils without damaging the skin barrier.", link: "#" }
-    ];
-
-    if (flawsText.includes("acne") || flawsText.includes("blemish") || flawsText.includes("pore")) {
-      newAm.push({ step: "02", name: "Acne Control Serum", ingredient: "2% Salicylic Acid (BHA)", purpose: "Clears sub-surface congestion and minimizes pores.", link: "#" });
-    } else if (flawsText.includes("dark") || flawsText.includes("pigment") || flawsText.includes("redness")) {
-      newAm.push({ step: "02", name: "Antioxidant Defense Serum", ingredient: "15% L-Ascorbic Acid (Vit C)", purpose: "Brightens uneven tone and protects against UV damage.", link: "#" });
-    } else {
-      newAm.push({ step: "02", name: "Barrier Support Serum", ingredient: "Niacinamide 10%", purpose: "Evens out skin texture and controls excess sebum.", link: "#" });
     }
 
-    newAm.push({ step: "03", name: "Matte Sunshield SPF 50", ingredient: "Zinc Oxide + Niacinamide", purpose: "Prevents aging and locks in the morning treatment.", link: "#" });
-    setAmRoutine(newAm);
+    fetchData();
+  }, [userId]);
 
-    // PM Routine (রাতের রুটিন)
-    const newPm: RoutineItem[] = [
-      { step: "01", name: "Deep Pore Cleansing Balm", ingredient: "Squalane based", purpose: "Melts away SPF, makeup, and daily pollution.", link: "#" }
-    ];
-
-    if (flawsText.includes("wrinkle") || flawsText.includes("line") || flawsText.includes("aging")) {
-      newPm.push({ step: "02", name: "Cellular Repair Treatment", ingredient: "0.1% Retinol", purpose: "Accelerates cell turnover and improves facial texture.", link: "#" });
-    } else {
-      newPm.push({ step: "02", name: "Gentle Exfoliator", ingredient: "Lactic Acid (AHA)", purpose: "Gently removes dead skin cells for a morning glow.", link: "#" });
-    }
-
-    newPm.push({ step: "03", name: "Barrier Repair Moisturizer", ingredient: "Peptides + Ceramides", purpose: "Restores hydration and elasticity overnight.", link: "#" });
-    setPmRoutine(newPm);
+  const toggleExpand = (index: number) => {
+    setExpandedRoutineItem(expandedRoutineItem === index ? null : index);
   };
 
-  // লোডিং স্ট্যাটাস
-  if (!isLoaded || isLoading) {
+  // 🌟 AI-এর অরিজিনাল রুটিন থেকে Preparation Steps খুঁজে বের করার স্মার্ট লজিক 🌟
+  const getRealPreparationSteps = (item: any) => {
+    let dbSteps = item.preparation || item.steps || item.preparation_steps || item.instructions;
+    if (Array.isArray(dbSteps) && dbSteps.length > 0) return dbSteps;
+    if (typeof dbSteps === 'string') return dbSteps.split('\n').filter((s: string) => s.trim() !== '');
+
+    if (localAiRoutine) {
+        const stepLower = item.step?.toLowerCase() || item.time?.toLowerCase() || item.product_type?.toLowerCase() || "";
+        
+        if (stepLower.includes("morning") || stepLower.includes("am")) {
+           if (localAiRoutine.morning?.steps) return localAiRoutine.morning.steps;
+           if (Array.isArray(localAiRoutine.morning)) return localAiRoutine.morning;
+        }
+        if (stepLower.includes("afternoon") || stepLower.includes("mid")) {
+           if (localAiRoutine.afternoon?.steps) return localAiRoutine.afternoon.steps;
+        }
+        if (stepLower.includes("night") || stepLower.includes("pm")) {
+           if (localAiRoutine.night?.steps) return localAiRoutine.night.steps;
+           if (Array.isArray(localAiRoutine.night)) return localAiRoutine.night;
+        }
+    }
+
+    return [
+        "AI is currently finalizing the exact measurements for this ingredient.",
+        "Please follow standard natural application methods in the meantime."
+    ];
+  };
+
+  if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-[#030306]">
-         <Loader2 className="h-10 w-10 animate-spin text-cyan-400" />
+      <div className="min-h-screen bg-[#030306] flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-emerald-500/20 border-t-emerald-400 rounded-full animate-spin"></div>
       </div>
     );
   }
 
-  // যদি স্ক্যান ডেটা না থাকে
-  if (flaws.length === 0) {
+  if (!masterPlan) {
     return (
-      <div className="flex h-[80vh] w-full flex-col items-center justify-center px-4 text-center bg-[#030306]">
-        <div className="max-w-md w-full rounded-3xl border border-white/10 bg-zinc-900/50 p-10 shadow-2xl backdrop-blur-sm">
-           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-cyan-500/10 text-cyan-400">
-             <Camera className="h-8 w-8" />
-           </div>
-           <h2 className="mb-2 text-2xl font-bold text-white">Unlock Your Protocol</h2>
-           <p className="mb-8 text-sm text-zinc-400">Scan your face to generate your personalized 30-Day AM/PM aesthetic routine.</p>
-           <Link href="/upload" className="inline-block w-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 px-8 py-4 font-bold text-black transition-transform hover:scale-105">
-              Take Biometric Scan
-           </Link>
-        </div>
+      <div className="min-h-screen bg-[#030306] flex flex-col items-center justify-center p-6 text-center">
+        <Sparkles className="w-16 h-16 text-zinc-600 mb-4" />
+        <h2 className="text-2xl font-black text-white uppercase tracking-widest">No Routine Found</h2>
+        <p className="text-zinc-400 mt-2">Please scan your face first to generate your 30-Day Natural Protocol.</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-20 p-6 md:p-10">
+    <div className="min-h-screen bg-[#030306] text-zinc-100 p-6 md:p-10 pb-24 font-sans selection:bg-emerald-500/30">
       
-      {/* হেডার সেকশন */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-cyan-950/40 to-transparent p-8 rounded-[2.5rem] border border-cyan-500/20 shadow-2xl">
-        <div>
-          <h2 className="text-3xl font-black text-white tracking-tight">The Glow Protocol</h2>
-          <p className="text-zinc-400 mt-2 text-sm">Your bespoke 30-day aesthetic blueprint, generated by AI.</p>
-        </div>
-        <div className="flex items-center gap-2 bg-emerald-500/10 px-4 py-2 rounded-full border border-emerald-500/20">
-           <ShieldCheck className="w-4 h-4 text-emerald-400" />
-           <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest text-[10px]">Scientifically Curated</span>
-        </div>
-      </div>
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-600/5 blur-[120px] rounded-full pointer-events-none"></div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="max-w-6xl mx-auto relative z-10">
         
-        {/* Morning Routine (AM) */}
-        <div className="space-y-6">
-          <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-            <span className="p-3 rounded-2xl bg-amber-500/10 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
-              <Sun className="w-6 h-6" />
-            </span>
-            <div>
-               <h3 className="text-xl font-bold text-white tracking-tight">Morning Routine</h3>
-               <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Protection & Hydration</p>
-            </div>
+        <div className="bg-zinc-900/40 border border-white/5 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-12 mb-10 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none">
+            <Leaf className="w-64 h-64 rotate-12" />
           </div>
           
-          <div className="space-y-4">
-            {amRoutine.map((item, idx) => (
-              <div key={idx} className="group relative overflow-hidden rounded-[2rem] border border-white/5 bg-zinc-950/50 p-6 transition-all hover:bg-white/[0.02] hover:border-amber-500/30">
-                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
-                   <span className="text-6xl font-black italic text-white">{item.step}</span>
-                </div>
-                <div className="relative z-10">
-                  <span className="inline-block mb-3 px-3 py-1 rounded-full bg-white/5 text-[9px] font-bold text-amber-400 uppercase tracking-widest border border-white/5">
-                    {item.ingredient}
-                  </span>
-                  <h4 className="text-lg font-bold text-white mb-2">{item.name}</h4>
-                  <p className="text-sm text-zinc-400 leading-relaxed mb-6">{item.purpose}</p>
-                  
-                  <a href={item.link} target="_blank" rel="noopener noreferrer" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-xs font-bold text-white transition hover:bg-amber-500 hover:text-black hover:border-amber-500 shadow-lg">
-                    <ExternalLink className="w-4 h-4" />
-                    Get it on Amazon
-                  </a>
-                </div>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
+                <CheckCircle2 className="w-3 h-3" /> Scientifically Curated Natural Plan
               </div>
-            ))}
+              <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter italic">
+                THE GLOW <span className="text-emerald-500">ROUTINE</span>
+              </h1>
+              <p className="text-zinc-500 max-w-xl text-sm md:text-base leading-relaxed">
+                Your bespoke 30-day aesthetic blueprint, generated by AI using 100% organic and homemade ingredients.
+              </p>
+            </div>
+            <button
+              onClick={() => window.print()}
+              className="px-8 py-4 bg-white text-black font-black text-xs uppercase tracking-widest rounded-full hover:bg-emerald-400 transition-all shadow-[0_0_30px_rgba(255,255,255,0.1)] print:hidden"
+            >
+              Download PDF
+            </button>
           </div>
         </div>
 
-        {/* Night Routine (PM) */}
-        <div className="space-y-6">
-          <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-            <span className="p-3 rounded-2xl bg-indigo-500/10 text-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
-              <Moon className="w-6 h-6" />
-            </span>
-            <div>
-               <h3 className="text-xl font-bold text-white tracking-tight">Night Routine</h3>
-               <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Repair & Recovery</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+
+          {/* Left Column: Natural Cosmetics */}
+          <div className="space-y-8">
+            <div className="flex items-center gap-3 px-2">
+              <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+                <Sun className="w-5 h-5" />
+              </div>
+              <h2 className="text-xl font-bold text-white uppercase tracking-tight">Skin Care Ritual</h2>
+            </div>
+
+            <div className="space-y-6">
+              {masterPlan.cosmetic_routine?.map((item: any, idx: number) => {
+                
+                // 🌟 আসল AI স্টেপস বের করা হচ্ছে 🌟
+                const finalSteps = getRealPreparationSteps(item);
+
+                return (
+                  <div key={idx} className="group bg-zinc-900/30 border border-white/5 rounded-[2rem] p-8 transition-all hover:bg-zinc-900/50 hover:border-emerald-500/30 print:break-inside-avoid">
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em]">{item.step || "Step"}</span>
+                        <h3 className="text-2xl font-bold text-white leading-tight pr-4">{item.product_type || item.title || "Natural Remedy"}</h3>
+                      </div>
+                      <span className="text-4xl font-black text-white/5 group-hover:text-emerald-500/10 transition-colors italic">0{idx + 1}</span>
+                    </div>
+
+                    <p className="text-zinc-400 text-sm leading-relaxed mb-6">
+                      {item.reason || item.description || "Helps rejuvenate and repair skin naturally."}
+                    </p>
+
+                    {/* Preparation Steps Button */}
+                    {finalSteps && finalSteps.length > 0 && (
+                      <>
+                        <button
+                          onClick={() => toggleExpand(idx)}
+                          className="w-full py-4 rounded-xl border border-white/10 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-300 group-hover:border-emerald-500/50 group-hover:text-emerald-400 transition-all print:hidden mt-2"
+                        >
+                          <span>PREPARATION STEPS</span>
+                          <ChevronDown className={`w-3 h-3 transition-transform ${expandedRoutineItem === idx ? 'rotate-180' : ''}`} />
+                        </button>
+                        
+                        <div
+                          className={`overflow-hidden transition-[max-height] duration-500 ease-in-out ${
+                            expandedRoutineItem === idx ? 'max-h-96 opacity-100 mt-4' : 'max-h-0 opacity-0'
+                          }`}
+                        >
+                          <ul className="text-sm text-zinc-300 space-y-3 pl-2 border-t border-white/10 pt-4">
+                            {finalSteps.map((step: string, sIdx: number) => (
+                              <li key={sIdx} className="flex items-start gap-3 leading-relaxed">
+                                <span className="text-emerald-500 mt-0.5">•</span> 
+                                <span>{step.replace(/^- /, '').replace(/^• /, '')}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
-          
-          <div className="space-y-4">
-            {pmRoutine.map((item, idx) => (
-              <div key={idx} className="group relative overflow-hidden rounded-[2rem] border border-white/5 bg-zinc-950/50 p-6 transition-all hover:bg-white/[0.02] hover:border-indigo-500/30">
-                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
-                   <span className="text-6xl font-black italic text-white">{item.step}</span>
-                </div>
-                <div className="relative z-10">
-                  <span className="inline-block mb-3 px-3 py-1 rounded-full bg-white/5 text-[9px] font-bold text-indigo-400 uppercase tracking-widest border border-white/5">
-                    {item.ingredient}
-                  </span>
-                  <h4 className="text-lg font-bold text-white mb-2">{item.name}</h4>
-                  <p className="text-sm text-zinc-400 leading-relaxed mb-6">{item.purpose}</p>
-                  
-                  <a href={item.link} target="_blank" rel="noopener noreferrer" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-xs font-bold text-white transition hover:bg-indigo-500 hover:text-white hover:border-indigo-500 shadow-lg">
-                    <ExternalLink className="w-4 h-4" />
-                    Shop Now
-                  </a>
-                </div>
+
+          {/* Right Column: Healing Diet Plan */}
+          <div className="space-y-8">
+            <div className="flex items-center gap-3 px-2">
+              <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400">
+                <Droplets className="w-5 h-5" />
               </div>
-            ))}
+              <h2 className="text-xl font-bold text-white uppercase tracking-tight">Healing Diet Plan</h2>
+            </div>
+
+            <div className="space-y-6">
+              {masterPlan.diet_plan?.map((item: any, idx: number) => (
+                <div key={idx} className="group bg-zinc-900/30 border border-white/5 rounded-[2rem] p-8 transition-all hover:bg-zinc-900/50 hover:border-cyan-500/30 print:break-inside-avoid">
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-cyan-500">
+                        <Clock className="w-3 h-3" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">{item.time || "Daily"}</span>
+                      </div>
+                      <h3 className="text-2xl font-bold text-white leading-tight pr-4">{item.food || "Healthy Meal"}</h3>
+                    </div>
+                    <span className="text-4xl font-black text-white/5 group-hover:text-cyan-500/10 transition-colors italic">0{idx + 1}</span>
+                  </div>
+
+                  <p className="text-zinc-400 text-sm leading-relaxed">
+                    {item.benefit || "Improves overall skin health from within."}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-white/10 rounded-[2rem] p-8 mt-10 print:break-inside-avoid">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="w-4 h-4 text-emerald-400" />
+                <span className="text-xs font-bold text-white uppercase tracking-widest">Pro Tip</span>
+              </div>
+              <p className="text-sm text-emerald-100/80 leading-relaxed italic">
+                "Consistency is the key to natural healing. Natural ingredients take 14-21 days to show visible cellular changes. Trust the process."
+              </p>
+            </div>
           </div>
+
         </div>
 
-      </div>
-
-      {/* --- IMPORTANT: MEDICAL DISCLAIMER --- */}
-      <div className="mt-12 p-6 rounded-3xl border border-white/5 bg-white/[0.02] max-w-3xl mx-auto backdrop-blur-md">
-        <div className="flex gap-4 items-start">
-          <Info className="w-5 h-5 text-zinc-500 shrink-0 mt-1" />
-          <div className="space-y-2">
-            <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Medical Disclaimer</h4>
-            <p className="text-[10px] text-zinc-500 leading-relaxed italic">
-              *The Glow Protocol is an AI-generated cosmetic routine inspired by clinical dermatology standards. 
-              GlowAI provides cosmetic suggestions, not medical diagnosis or advice. 
-              Results may vary based on individual biology. Always perform a patch test on a small area of skin before applying new ingredients fully. 
-              Consult a certified healthcare professional for clinical skin conditions or severe acne.
+        {/* Legal Disclaimer */}
+        <div className="mt-20 p-6 rounded-[2rem] bg-amber-500/5 border border-amber-500/10 flex items-start gap-4 print:break-inside-avoid">
+          <Info className="w-6 h-6 text-amber-500 shrink-0 mt-1" />
+          <div className="space-y-1">
+            <p className="text-xs font-bold text-amber-500 uppercase tracking-widest">Medical Disclaimer</p>
+            <p className="text-[11px] text-amber-200/60 leading-relaxed">
+              The routines and diet plans provided by GlowryAI are strictly based on natural, homemade remedies and are for informational purposes only. This app does not provide medical advice, diagnosis, or treatment. Always consult with a qualified dermatologist or healthcare provider before starting any new skincare or dietary regimen, especially if you have pre-existing conditions or allergies.
             </p>
           </div>
         </div>
-      </div>
 
+      </div>
     </div>
   );
 }

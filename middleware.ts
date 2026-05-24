@@ -1,17 +1,8 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 
-const isPublicRoute = createRouteMatcher(['/scanner(.*)', '/upload(.*)', '/', '/api/analyze-skin']);
-
-export default clerkMiddleware(async (auth, request) => {
-  if (!isPublicRoute(request)) {
-    await auth.protect();
-  }
-});
+// এই ছোট্ট কোডটাই তোমার রিডাইরেক্ট লুপ ভেঙে দেবে এবং অ্যাপ ফাস্ট করবে
+export default clerkMiddleware();
 
 export const config = {
-  matcher: [
-    "/((?!.*\\..*|_next).*)", 
-    "/", 
-    "/(api|trpc)(.*)"
-  ],
+  matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
 };
