@@ -11,6 +11,11 @@ import {
   ScanFace, Sun, Maximize, ShieldCheck, AlertCircle, Lock, Activity, RefreshCcw, CheckCircle2, Clock, Trophy, Sparkles, AlertOctagon
 } from "lucide-react";
 
+// 🌟 NEW HYBRID ENGINE IMPORTS 🌟
+import { checkImageBrightness } from '@/utils/imageUtils';
+import { initializeMediaPipe, scanFaceWithMediaPipe } from '@/utils/mediaPipeHelper';
+import { calculateFaceScore } from '@/utils/faceMath';
+
 // 🌟 DEVELOPER TEST MODE 🌟
 const IS_TESTING = false; 
 const COOLDOWN_MS = IS_TESTING ? 60 * 1000 : 24 * 60 * 60 * 1000; 
@@ -89,7 +94,6 @@ function parseAnalysisData(rawText: string): AnalysisResult {
       melanin_evenness: parsed.melanin_evenness
     };
   } catch (e) { 
-    // 🚨 ডামি ডেটা রিমুভ করা হয়েছে। এখন এরর হলে ডাইরেক্ট Error থ্রো করবে। 🚨
     throw new Error("Failed to parse AI response.");
   }
 }
@@ -119,20 +123,24 @@ export default function ScannerPage() {
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [minWaitDone, setMinWaitDone] = useState(false);
 
-  // 🌟 Fingerprint + Limit State 🌟
   const [fingerprint, setFingerprint] = useState<string | null>(null);
   const [hasReachedLimit, setHasReachedLimit] = useState(false);
   const [isCheckingLimit, setIsCheckingLimit] = useState(true);
 
-  // 🌟 PRO LIMIT & CYCLE STATES 🌟
   const [proCooldownEnd, setProCooldownEnd] = useState<number | null>(null);
   const [totalScans, setTotalScans] = useState<number>(0);
   const [timeLeft, setTimeLeft] = useState<string>("");
   const [isSubscriptionExpired, setIsSubscriptionExpired] = useState<boolean>(false);
 
   const analysisAbortRef = useRef<AbortController | null>(null);
+  const scanLockRef = useRef(false);
+  const dbInsertLockRef = useRef(false);
 
-  // 🌟 পেজ লোড হলেই Fingerprint + LocalStorage + Supabase চেক করবে 🌟
+  // 🌟 PRE-LOAD MEDIAPIPE ENGINE 🌟
+  useEffect(() => {
+    initializeMediaPipe();
+  }, []);
+
   useEffect(() => {
     const initFingerprintAndCheckLimit = async () => {
       try {
@@ -142,7 +150,6 @@ export default function ScannerPage() {
         setFingerprint(currentFingerprint);
 
         if (isSignedIn && userId) {
-          // 🌟 0. CHECK SUBSCRIPTION VALIDITY (30 Days) 🌟
           const { data: masterData } = await supabase
             .from("master_glow_plans")
             .select("created_at")
@@ -159,7 +166,6 @@ export default function ScannerPage() {
             }
           }
 
-          // 🌟 1. TOTAL SCANS LIMIT CHECK (30 Scans) 🌟
           const { count, error: countError } = await supabase
             .from("user_scans")
             .select('*', { count: 'exact', head: true })
@@ -169,7 +175,6 @@ export default function ScannerPage() {
             setTotalScans(count);
           }
 
-          // 🌟 2. PRO USER 24-HOUR LIMIT CHECK 🌟
           const { data } = await supabase
             .from("user_scans")
             .select("created_at")
@@ -186,7 +191,6 @@ export default function ScannerPage() {
             }
           }
         } else {
-          // 🌟 FREE USER LIFETIME LIMIT CHECK 🌟
           const localLimit = localStorage.getItem("free_scan_used");
           if (localLimit === "true") {
             setHasReachedLimit(true);
@@ -215,7 +219,6 @@ export default function ScannerPage() {
     initFingerprintAndCheckLimit();
   }, [isSignedIn, userId]);
 
-  // 🌟 COUNTDOWN TIMER LOGIC 🌟
   useEffect(() => {
     if (!proCooldownEnd) return;
 
@@ -273,9 +276,12 @@ export default function ScannerPage() {
 
   const isLocked = (metrics.authenticity === "Checking..." || metrics.authenticity === "Makeup Detected") && !forceScan;
 
-  const beginAnalysisSequence = useCallback(async (dataUrl: string) => {
-    if (isScanning || hasReachedLimit || isCheckingLimit || proCooldownEnd || totalScans >= MAX_SCANS || isSubscriptionExpired) return;
+  const beginAnalysisSequence = useCallback(async (dataUrl: string, mpScore?: number, mpSymmetry?: number) => {
+    if (scanLockRef.current || isScanning || hasReachedLimit || isCheckingLimit || proCooldownEnd || totalScans >= MAX_SCANS || isSubscriptionExpired) return;
     
+    scanLockRef.current = true; 
+    dbInsertLockRef.current = false; 
+
     analysisAbortRef.current?.abort(); 
     const ac = new AbortController(); 
     analysisAbortRef.current = ac;
@@ -312,7 +318,9 @@ export default function ScannerPage() {
         body: JSON.stringify({ 
           image: payload,
           previousScore: previousScore,
-          previousIssues: previousIssues
+          previousIssues: previousIssues,
+          mediaPipeScore: mpScore,
+          mediaPipeSymmetry: mpSymmetry
         }),
         signal: ac.signal,
       });
@@ -329,8 +337,6 @@ export default function ScannerPage() {
       if (ac.signal.aborted) return;
       
       if (!res.ok || data.success === false) {
-
-        // 🌟 Catch Subscription Expired Error from API 🌟
         if (data.error_type === "subscription_expired") {
             setIsSubscriptionExpired(true);
             setAfterCapture("setup"); 
@@ -338,7 +344,6 @@ export default function ScannerPage() {
             return;
         }
 
-        // 🌟 5-STRIKES SILENT BLOCK LOGIC 🌟
         let currentStrikes = parseInt(localStorage.getItem("invalid_scan_count") || "0");
         currentStrikes += 1;
         localStorage.setItem("invalid_scan_count", currentStrikes.toString());
@@ -347,17 +352,18 @@ export default function ScannerPage() {
             localStorage.setItem("free_scan_used", "true");
             setHasReachedLimit(true);
             
-            if (!isSignedIn && fingerprint) {
+            if (!isSignedIn && fingerprint && !dbInsertLockRef.current) {
+                dbInsertLockRef.current = true;
                 const strikeOutData = {
                   user_id: null, 
-                  fingerprint_id: fingerprint,         
+                  fingerprint_id: fingerprint,        
                   score: 0,
                   problems: ["Blocked: Invalid Image Abuse"],
                   symmetry_score: null,
                   golden_ratio_match: null,
                   melanin_evenness: null
                 };
-                supabase.from("user_scans").insert([strikeOutData]).then();
+                await supabase.from("user_scans").insert([strikeOutData]);
             }
             setIsScanning(false);
             return; 
@@ -383,15 +389,13 @@ export default function ScannerPage() {
       localStorage.setItem("glow_image", payload);
       localStorage.setItem("glow_quiz_completed", "true");
 
-      // 🌟 Mark scan as used for Free Users 🌟
       if (!isSignedIn) {
           localStorage.setItem("free_scan_used", "true");
       }
 
-      // 🌟 Save to Supabase 🌟
       const scanData = {
         user_id: isSignedIn ? userId : null, 
-        fingerprint_id: fingerprint,         
+        fingerprint_id: fingerprint,        
         score: parsedData.score || 0,
         problems: parsedData.basic_flaws || [],
         symmetry_score: parsedData.symmetry_score || null,
@@ -399,26 +403,65 @@ export default function ScannerPage() {
         melanin_evenness: parsedData.melanin_evenness || null
       };
       
-      supabase.from("user_scans").insert([scanData]).then(({ error }) => {
+      if (!dbInsertLockRef.current) {
+          dbInsertLockRef.current = true; 
+          
+          const { error } = await supabase.from("user_scans").insert([scanData]);
           if (error) {
               console.error("Supabase Save Error:", error);
           } else if (isSignedIn) {
               setTotalScans(prev => prev + 1);
           }
-      });
+      } else {
+          console.warn("🚫 Ghost Request Blocked in Scanner.");
+      }
 
     } catch (e) {
       if (!(e instanceof DOMException && e.name === "AbortError")) setAnalysisError(SKIN_ANALYSIS_FAILURE_MESSAGE);
     } finally {
       setIsScanning(false);
+      scanLockRef.current = false; 
     }
   }, [isScanning, hasReachedLimit, isCheckingLimit, fingerprint, isSignedIn, userId, proCooldownEnd, totalScans, isSubscriptionExpired]);
 
+  // 🌟 MODIFIED HANDLE SCAN WITH HYBRID ENGINE AND USER CONFIRMATION (English) 🌟
   const handleScan = () => {
-    if (isLocked) return;
+    if (isLocked || scanLockRef.current) return;
+    
     const imageSrc = webcamRef.current?.getScreenshot();
     if (imageSrc) {
-      beginAnalysisSequence(imageSrc);
+      const img = new Image();
+      img.src = imageSrc;
+      img.onload = async () => {
+          // Layer 1: Light Checker
+          const brightness = checkImageBrightness(img);
+          
+          if (brightness < 70) {
+              const proceedAnyway = window.confirm(
+                  "⚠️ Low light detected! For the most accurate biometric scan, please move to a well-lit area.\n\nDo you want to proceed anyway?"
+              );
+              
+              if (!proceedAnyway) {
+                  return; 
+              }
+          }
+
+          // Layer 2: MediaPipe Scanner
+          const result = await scanFaceWithMediaPipe(img);
+          let mpScore = 0;
+          let mpSymmetry = 0;
+
+          if (result && result.faceLandmarks && result.faceLandmarks.length > 0) {
+              const scoreData = calculateFaceScore(result.faceLandmarks);
+              mpScore = scoreData.baseScore;
+              mpSymmetry = scoreData.symmetry;
+              
+              // Layer 3: Send Data to main API
+              beginAnalysisSequence(imageSrc, mpScore, mpSymmetry);
+          } else {
+              alert("⚠️ Facial mapping failed! Please ensure you are facing the camera directly.");
+          }
+      };
     } else {
       alert("Failed to capture picture. Please check camera permission.");
     }
@@ -466,7 +509,6 @@ export default function ScannerPage() {
 
   const potentialScore = Math.min(9.6, (skinAnalysis?.score || 7.5) + 1.5).toFixed(1);
 
-  // 🌟 LOADING UI 🌟
   if (isCheckingLimit) {
       return (
           <div className="flex h-screen w-full flex-col items-center justify-center bg-[#030306]">
@@ -475,7 +517,6 @@ export default function ScannerPage() {
       );
   }
 
-  // 🌟 FREE USER LIMIT UI 🌟
   if (hasReachedLimit && !isProUser) {
     return (
       <div className="flex h-screen w-full flex-col items-center justify-center px-4 text-center bg-[#030306]">
@@ -547,7 +588,6 @@ export default function ScannerPage() {
 
             <div className="w-full max-w-md space-y-6 pt-32">
                
-               {/* 🌟 0. SUBSCRIPTION EXPIRED UI 🌟 */}
                {isSubscriptionExpired ? (
                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full py-10 rounded-[1.5rem] bg-zinc-900 border border-rose-500/30 flex flex-col items-center justify-center gap-4 text-center px-6 shadow-[0_0_40px_rgba(244,63,94,0.1)] relative overflow-hidden z-50">
                       <div className="absolute top-0 left-0 w-full h-1 bg-rose-500"></div>
@@ -558,7 +598,6 @@ export default function ScannerPage() {
                       <button onClick={handleSecretReset} className="mt-4 text-[8px] text-zinc-500 hover:text-red-500 opacity-80 cursor-pointer">Reset Limit (Test Mode)</button>
                    </motion.div>
                ) : totalScans >= MAX_SCANS ? (
-                  // 🌟 1. CYCLE LIMIT UI (30/30) 🌟
                   <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full py-10 rounded-[1.5rem] bg-zinc-900 border border-emerald-500/30 flex flex-col items-center justify-center gap-4 text-center px-6 shadow-[0_0_40px_rgba(52,211,153,0.1)] z-50 relative">
                       <div className="relative"><Trophy className="w-12 h-12 text-emerald-400 animate-bounce" /><Sparkles className="absolute -top-2 -right-2 w-5 h-5 text-cyan-400" /></div>
                       <h3 className="text-xl font-black text-white uppercase italic">Journey Complete!</h3>
@@ -568,7 +607,6 @@ export default function ScannerPage() {
                       <button onClick={handleSecretReset} className="mt-4 text-[8px] text-zinc-500 hover:text-red-500 opacity-80 cursor-pointer">Reset Limit (Test Mode)</button>
                   </motion.div>
                ) : proCooldownEnd && Date.now() < proCooldownEnd ? (
-                  // 🌟 2. DAILY 24-HOUR COOLDOWN UI 🌟
                   <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full py-8 rounded-[1.5rem] bg-zinc-900/80 border border-amber-500/30 flex flex-col items-center justify-center gap-3 text-center px-4 shadow-[0_0_30px_rgba(245,158,11,0.1)] z-50 relative">
                       <Clock className="w-10 h-10 text-amber-400 mb-2 animate-pulse" />
                       <h3 className="text-lg font-black text-white uppercase italic tracking-wider">Rest Your Skin</h3>
@@ -580,7 +618,6 @@ export default function ScannerPage() {
                       <button onClick={handleSecretReset} className="mt-4 text-[8px] text-zinc-500 hover:text-red-500 opacity-80 cursor-pointer">Reset Limit (Test Mode)</button>
                   </motion.div>
                ) : (
-                  // 🌟 3. NORMAL LIVE SCANNER UI 🌟
                   <>
                      <div className="text-center">
                         <h1 className="text-3xl font-black text-white uppercase italic tracking-wider drop-shadow-lg">Smart Scanner</h1>
@@ -818,7 +855,7 @@ export default function ScannerPage() {
                      </button>
                   </div>
 
-                  <p className="mt-8 pb-4 text-center text-[9px] leading-relaxed text-zinc-600 px-4">Glow AI provides cosmetic routines based on AI analysis, not medical advice. Consult a dermatologist for clinical skin conditions.</p>
+                  <p className="mt-8 pb-4 text-center text-[9px] leading-relaxed text-zinc-600 px-4">Glow AI provides 100% natural and home maderoutines based on AI analysis, not medical advice. Consult a dermatologist for clinical skin conditions.</p>
                 </>
               )}
             </div>

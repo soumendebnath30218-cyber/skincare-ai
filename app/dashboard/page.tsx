@@ -110,7 +110,9 @@ export default function DashboardPage() {
             setMelaninEvenness(parsedData.melanin_evenness || null);
 
             if (localImage) setImage(localImage);
-            await saveNewScanToDB(parsedData);
+            
+            // 🚨 STEP 1 IMPLEMENTED: Commented out to prevent dashboard from inserting duplicate data 🚨
+            // await saveNewScanToDB(parsedData);
         } catch (e) {
             console.error("Local data parse error", e);
         }

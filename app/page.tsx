@@ -303,7 +303,7 @@ function FloatingBeautyElements() {
 // 🌟 SNEAK PEEK SECTION 🌟
 // ==========================================
 
-function SneakPeekSection({ onOpenPricing }: { onOpenPricing: () => void }) {
+function SneakPeekSection({ onOpenPricing, onCheckout }: { onOpenPricing: () => void, onCheckout: () => void }) {
   return (
     <section className="relative min-h-screen flex flex-col justify-center py-20 border-t border-white/5 bg-black/40 backdrop-blur-sm overflow-hidden pointer-events-auto">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none"></div>
@@ -443,9 +443,9 @@ function SneakPeekSection({ onOpenPricing }: { onOpenPricing: () => void }) {
 
         {/* 🌟 ACTION BUTTONS (UPGRADE & COMPARE) 🌟 */}
         <div className="mt-16 flex flex-col sm:flex-row items-center justify-center gap-6">
-          <Link className="inline-flex items-center gap-3 px-8 py-4 bg-white text-black font-black text-xs uppercase tracking-[0.2em] rounded-full hover:bg-emerald-400 hover:scale-105 transition-all shadow-[0_0_40px_rgba(255,255,255,0.2)]" href="/dashboard">
+          <button onClick={onCheckout} className="inline-flex items-center gap-3 px-8 py-4 bg-white text-black font-black text-xs uppercase tracking-[0.2em] rounded-full hover:bg-emerald-400 hover:scale-105 transition-all shadow-[0_0_40px_rgba(255,255,255,0.2)]">
             Upgrade to Pro <ArrowRight className="w-4 h-4"/>
-          </Link>
+          </button>
           
           <button 
             onClick={onOpenPricing}
@@ -518,7 +518,7 @@ function parseAnalysisData(rawText: string): AnalysisResult {
 
 export default function Home() {
   const router = useRouter();
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn, isLoaded, user } = useUser();
   const { openSignIn } = useClerk();
 
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -535,13 +535,68 @@ export default function Home() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [heroVisible, setHeroVisible] = useState(false);
   
-  // New State for Pricing Modal
   const [showPricing, setShowPricing] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const analysisAbortRef = useRef<AbortController | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // 🌟 DODO PAYMENTS CHECKOUT FUNCTION 🌟
+  const handleCheckout = async () => {
+    try {
+      console.log("Requesting payment link...");
+      
+      const userEmail = user?.primaryEmailAddress?.emailAddress || 'test@glowryai.com';
+      
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userEmail }), 
+      });
+
+      const data = await response.json();
+
+      if (data.url) {
+        window.location.href = data.url; 
+      } else {
+        console.error("Error connecting to Dodo:", data);
+        alert("Payment link generation failed. Check console.");
+      }
+    } catch (error) {
+      console.error("Checkout failed:", error);
+    }
+  };
+
+  // 🌟 AUTO-CHECKOUT MAGIC 🌟
+  useEffect(() => {
+    if (isLoaded && isSignedIn && typeof window !== "undefined" && window.location.search.includes("checkout=true")) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      if (user?.publicMetadata?.isPro) {
+        router.push("/dashboard");
+      } else {
+        handleCheckout();
+      }
+    }
+  }, [isLoaded, isSignedIn, user, router]);
+
+  // 🌟 MASTER UPGRADE FUNCTION 🌟
+  const triggerProUpgrade = () => {
+    setShowPricing(false); 
+    if (!isSignedIn) {
+      openSignIn({ 
+        forceRedirectUrl: "/checkout-redirect",
+        signUpForceRedirectUrl: "/checkout-redirect"
+      });
+    } else {
+      if (user?.publicMetadata?.isPro) {
+        router.push("/dashboard");
+      } else {
+        handleCheckout();
+      }
+    }
+  };
 
   useEffect(() => {
     const t = setTimeout(() => setHeroVisible(true), 100);
@@ -561,7 +616,6 @@ export default function Home() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, [stopStream]);
 
-  // 🌟 UPDATED ANALYSIS SEQUENCE (Handles backend errors like 24h limit) 🌟
   const beginAnalysisSequence = useCallback(async (dataUrl: string) => {
     if (isAnalyzing) return;
     analysisAbortRef.current?.abort(); const ac = new AbortController(); analysisAbortRef.current = ac;
@@ -584,7 +638,7 @@ export default function Home() {
       if (!res.ok || data.success === false) {
         setAnalysisError(data.error || SKIN_ANALYSIS_FAILURE_MESSAGE);
         setIsAnalyzing(false);
-        setAfterCapture("result"); // Jump to result to show the error
+        setAfterCapture("result"); 
         return;
       }
       
@@ -614,8 +668,13 @@ export default function Home() {
     if (skinAnalysis && capturedImage) {
       localStorage.setItem("glow_analysis", JSON.stringify(skinAnalysis));
       localStorage.setItem("glow_image", capturedImage);
-      if (!isSignedIn) { openSignIn({ forceRedirectUrl: "/dashboard" }); }
-      else { router.push("/dashboard"); }
+      if (!isSignedIn) { 
+        openSignIn({ 
+          forceRedirectUrl: "/checkout-redirect",
+          signUpForceRedirectUrl: "/checkout-redirect"
+        }); 
+      }
+      else { triggerProUpgrade(); }
     }
   };
 
@@ -713,10 +772,7 @@ export default function Home() {
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#030306] text-zinc-100 font-sans">
 
-      {/* 🌟 THREE.JS 3D ANIMATED BACKGROUND 🌟 */}
       <ThreeJSBackground />
-
-      {/* 🌟 CSS OVERLAY BACKGROUND 🌟 */}
       <ThreeDBackground />
       <FloatingBeautyElements />
 
@@ -737,7 +793,7 @@ export default function Home() {
         <div className="flex items-center gap-4">
           {!isLoaded && <span className="text-zinc-500 text-sm animate-pulse">Loading Gateway...</span>}
           {isLoaded && !isSignedIn && (
-            <SignInButton>
+            <SignInButton fallbackRedirectUrl="/dashboard">
               <button className="text-sm font-bold text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer px-6 py-2 border border-cyan-400/20 rounded-full bg-cyan-400/10 shadow-[0_0_15px_rgba(34,211,238,0.2)] backdrop-blur-md">
                 Sign In
               </button>
@@ -832,8 +888,8 @@ export default function Home() {
         </div>
       </main>
 
-      {/* 🌟 SNEAK PEEK SECTION (Passes down the modal toggle) 🌟 */}
-      <SneakPeekSection onOpenPricing={() => setShowPricing(true)} />
+      {/* 🌟 SNEAK PEEK SECTION (Passes master upgrade function down) 🌟 */}
+      <SneakPeekSection onOpenPricing={() => setShowPricing(true)} onCheckout={triggerProUpgrade} />
 
       <Footer/>
 
@@ -961,7 +1017,7 @@ export default function Home() {
                     </ul>
                   </div>
 
-                  <button onClick={() => { setShowPricing(false); router.push("/dashboard"); }} className="mt-10 w-full py-4 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-black uppercase tracking-[0.2em] text-xs shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all hover:scale-[1.02]">
+                  <button onClick={triggerProUpgrade} className="mt-10 w-full py-4 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-black uppercase tracking-[0.2em] text-xs shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all hover:scale-[1.02]">
                     Upgrade to Pro Now
                   </button>
                 </div>
@@ -1089,7 +1145,7 @@ export default function Home() {
                                   <span className="px-2 py-1 rounded bg-amber-500/20 text-[9px] text-amber-300 font-bold tracking-widest border border-amber-500/30">LOCKED</span>
                                 </div>
                                 <div className="relative h-44 w-full rounded-lg overflow-hidden bg-black flex items-center justify-center">
-                                  <img src={capturedImage} alt="Symmetry" className="absolute inset-0 w-full h-full object-cover opacity-40 blur-[4px] grayscale transition-all duration-700 group-hover:blur-[2px]" />
+                                  <img src={capturedImage} alt="Symmetry" className="absolute inset-0 w-full h-full object-cover opacity-40 blur-[2px] grayscale transition-all duration-700 group-hover:blur-[2px]" />
                                   <div className="absolute inset-0 flex items-center justify-center opacity-60"><div className="w-[1px] h-full bg-cyan-400/50"></div><div className="h-[1px] w-full bg-cyan-400/50 absolute"></div><div className="w-28 h-36 border border-amber-400/40 rounded-[40%] absolute"></div><div className="w-16 h-20 border border-emerald-400/30 rounded-full absolute -translate-y-6"></div><div className="w-full h-[1px] bg-amber-500/40 absolute translate-y-8"></div></div>
                                   <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex flex-col items-center justify-center"><div className="h-12 w-12 rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(251,191,36,0.3)]"><svg className="w-6 h-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg></div><span className="text-[10px] text-zinc-300 font-bold tracking-widest uppercase">Facial Geometry Hidden</span></div>
                                 </div>
@@ -1110,7 +1166,7 @@ export default function Home() {
                                 <p className="text-xs text-zinc-400 mb-6 leading-relaxed px-2">Unlock your personalized 30-Day Glow-Up Plan, view your full symmetry report, and reveal your highest aesthetic potential.</p>
                                 <div className="mb-6 border-t border-white/5 pt-5 text-left">
                                   <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 mb-4">Deep Aesthetic Analysis</h4>
-                                  <div className="space-y-3 blur-[4px] opacity-40 select-none pointer-events-none">
+                                  <div className="space-y-3 blur-[2px] opacity-40 select-none pointer-events-none">
                                       <div className="flex gap-3 items-center"><div className="h-4 w-4 rounded-full bg-white/40"></div><div className="h-2 bg-white/30 rounded w-3/4"></div></div>
                                       <div className="flex gap-3 items-center"><div className="h-4 w-4 rounded-full bg-white/40"></div><div className="h-2 bg-white/30 rounded w-5/6"></div></div>
                                       <div className="flex gap-3 items-center"><div className="h-4 w-4 rounded-full bg-white/40"></div><div className="h-2 bg-white/30 rounded w-2/3"></div></div>
@@ -1130,7 +1186,7 @@ export default function Home() {
                             </div>
                           </div>
                         )}
-                        <p className="mt-8 pb-4 text-center text-[9px] leading-relaxed text-zinc-600 px-4">Glow AI provides cosmetic routines based on AI analysis, not medical advice. Consult a dermatologist for clinical skin conditions.</p>
+                        <p className="mt-8 pb-4 text-center text-[9px] leading-relaxed text-zinc-600 px-4">Glow AI provides 100% natural and home made routines based on AI analysis, not medical advice. Consult a dermatologist for clinical skin conditions.</p>
                       </>
                     )}
                   </div>
