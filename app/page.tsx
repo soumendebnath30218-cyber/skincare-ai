@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useUser, useClerk, SignInButton, UserButton } from "@clerk/nextjs";
+import { useUser, SignInButton, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
-import { Sparkles, Activity, TrendingUp, Lock, CheckCircle2, ArrowRight, X, XCircle, Info } from "lucide-react";
+import { Sparkles, Activity, TrendingUp, Lock, CheckCircle2, X, XCircle, Info } from "lucide-react";
+import UpgradeButton from "@/components/UpgradeButton";
 
 // ==========================================
 // 🌟 INLINE COMPONENTS 🌟
@@ -303,7 +304,7 @@ function FloatingBeautyElements() {
 // 🌟 SNEAK PEEK SECTION 🌟
 // ==========================================
 
-function SneakPeekSection({ onOpenPricing, onCheckout }: { onOpenPricing: () => void, onCheckout: () => void }) {
+function SneakPeekSection({ onOpenPricing }: { onOpenPricing: () => void }) {
   return (
     <section className="relative min-h-screen flex flex-col justify-center py-20 border-t border-white/5 bg-black/40 backdrop-blur-sm overflow-hidden pointer-events-auto">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none"></div>
@@ -443,9 +444,10 @@ function SneakPeekSection({ onOpenPricing, onCheckout }: { onOpenPricing: () => 
 
         {/* 🌟 ACTION BUTTONS (UPGRADE & COMPARE) 🌟 */}
         <div className="mt-16 flex flex-col sm:flex-row items-center justify-center gap-6">
-          <button onClick={onCheckout} className="inline-flex items-center gap-3 px-8 py-4 bg-white text-black font-black text-xs uppercase tracking-[0.2em] rounded-full hover:bg-emerald-400 hover:scale-105 transition-all shadow-[0_0_40px_rgba(255,255,255,0.2)]">
-            Upgrade to Pro <ArrowRight className="w-4 h-4"/>
-          </button>
+          <UpgradeButton
+            title="Upgrade to Pro"
+            className="inline-flex items-center gap-3 px-8 py-4 bg-white text-black font-black text-xs uppercase tracking-[0.2em] rounded-full hover:bg-emerald-400 hover:scale-105 transition-all shadow-[0_0_40px_rgba(255,255,255,0.2)]"
+          />
           
           <button 
             onClick={onOpenPricing}
@@ -518,8 +520,7 @@ function parseAnalysisData(rawText: string): AnalysisResult {
 
 export default function Home() {
   const router = useRouter();
-  const { isSignedIn, isLoaded, user } = useUser();
-  const { openSignIn } = useClerk();
+  const { isSignedIn, isLoaded } = useUser();
 
   const [scannerOpen, setScannerOpen] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -541,62 +542,6 @@ export default function Home() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const analysisAbortRef = useRef<AbortController | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  // 🌟 DODO PAYMENTS CHECKOUT FUNCTION 🌟
-  const handleCheckout = async () => {
-    try {
-      console.log("Requesting payment link...");
-      
-      const userEmail = user?.primaryEmailAddress?.emailAddress || 'test@glowryai.com';
-      
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: userEmail }), 
-      });
-
-      const data = await response.json();
-
-      if (data.url) {
-        window.location.href = data.url; 
-      } else {
-        console.error("Error connecting to Dodo:", data);
-        alert("Payment link generation failed. Check console.");
-      }
-    } catch (error) {
-      console.error("Checkout failed:", error);
-    }
-  };
-
-  // 🌟 AUTO-CHECKOUT MAGIC 🌟
-  useEffect(() => {
-    if (isLoaded && isSignedIn && typeof window !== "undefined" && window.location.search.includes("checkout=true")) {
-      window.history.replaceState({}, document.title, window.location.pathname);
-      
-      if (user?.publicMetadata?.isPro) {
-        router.push("/dashboard");
-      } else {
-        handleCheckout();
-      }
-    }
-  }, [isLoaded, isSignedIn, user, router]);
-
-  // 🌟 MASTER UPGRADE FUNCTION 🌟
-  const triggerProUpgrade = () => {
-    setShowPricing(false); 
-    if (!isSignedIn) {
-      openSignIn({ 
-        forceRedirectUrl: "/checkout-redirect",
-        signUpForceRedirectUrl: "/checkout-redirect"
-      });
-    } else {
-      if (user?.publicMetadata?.isPro) {
-        router.push("/dashboard");
-      } else {
-        handleCheckout();
-      }
-    }
-  };
 
   useEffect(() => {
     const t = setTimeout(() => setHeroVisible(true), 100);
@@ -662,20 +607,6 @@ export default function Home() {
   const nextQuizStep = () => {
     if (quizStep < 2) setQuizStep(quizStep + 1);
     else { setAfterCapture("analyzing"); setTimeout(() => setAfterCapture("result"), 4500); }
-  };
-
-  const handleUnlockDashboard = () => {
-    if (skinAnalysis && capturedImage) {
-      localStorage.setItem("glow_analysis", JSON.stringify(skinAnalysis));
-      localStorage.setItem("glow_image", capturedImage);
-      if (!isSignedIn) { 
-        openSignIn({ 
-          forceRedirectUrl: "/checkout-redirect",
-          signUpForceRedirectUrl: "/checkout-redirect"
-        }); 
-      }
-      else { triggerProUpgrade(); }
-    }
   };
 
   const openScannerUploadOnly = useCallback(() => {
@@ -889,7 +820,7 @@ export default function Home() {
       </main>
 
       {/* 🌟 SNEAK PEEK SECTION (Passes master upgrade function down) 🌟 */}
-      <SneakPeekSection onOpenPricing={() => setShowPricing(true)} onCheckout={triggerProUpgrade} />
+      <SneakPeekSection onOpenPricing={() => setShowPricing(true)} />
 
       <Footer/>
 
@@ -1017,9 +948,10 @@ export default function Home() {
                     </ul>
                   </div>
 
-                  <button onClick={triggerProUpgrade} className="mt-10 w-full py-4 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-black uppercase tracking-[0.2em] text-xs shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all hover:scale-[1.02]">
-                    Upgrade to Pro Now
-                  </button>
+                  <UpgradeButton
+                    title="Upgrade to Pro Now"
+                    className="mt-10 w-full py-4 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-black uppercase tracking-[0.2em] text-xs shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all hover:scale-[1.02]"
+                  />
                 </div>
 
               </div>
@@ -1172,7 +1104,10 @@ export default function Home() {
                                       <div className="flex gap-3 items-center"><div className="h-4 w-4 rounded-full bg-white/40"></div><div className="h-2 bg-white/30 rounded w-2/3"></div></div>
                                   </div>
                                 </div>
-                                <button onClick={handleUnlockDashboard} className="group relative inline-flex w-full items-center justify-center rounded-2xl py-4 text-sm font-black text-slate-950 transition-all hover:scale-[1.02] active:scale-[0.98]"><span className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 bg-[length:200%_auto] animate-bg-pan opacity-100" /><span className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 shadow-[0_0_25px_rgba(34,211,238,0.6)] blur-sm opacity-70 group-hover:opacity-100 transition-opacity duration-500" /><span className="relative flex items-center gap-2 uppercase tracking-widest">Unlock Everything - $5.99</span></button>
+                                <UpgradeButton
+                                  title="Unlock Everything - $5.99"
+                                  className="group relative inline-flex w-full items-center justify-center rounded-2xl py-4 text-sm font-black text-slate-950 bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 hover:scale-[1.02] active:scale-[0.98] uppercase tracking-widest shadow-[0_0_25px_rgba(34,211,238,0.6)]"
+                                />
                               </div>
                             </div>
                           </div>
@@ -1182,7 +1117,10 @@ export default function Home() {
                             <div className="max-h-[min(280px,45vh)] overflow-y-auto text-sm leading-relaxed whitespace-pre-wrap text-zinc-300">{skinAnalysis?.raw}</div>
                             <div className="mt-6 flex flex-col items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5 text-center">
                               <p className="text-sm font-medium text-emerald-200/90">Want the 30-Day Glow-Up Blueprint?</p><p className="text-xs text-zinc-500">Unlock step-by-step AM/PM routines and product suggestions.</p>
-                              <button onClick={handleUnlockDashboard} className="mt-2 inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 px-6 py-3 text-sm font-semibold text-zinc-950 shadow-[0_0_24px_rgba(52,211,153,0.25)] hover:brightness-110">$5.99 Unlock Report</button>
+                              <UpgradeButton
+                                title="$5.99 Unlock Report"
+                                className="mt-2 inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 px-6 py-3 text-sm font-semibold text-zinc-950 shadow-[0_0_24px_rgba(52,211,153,0.25)] hover:brightness-110"
+                              />
                             </div>
                           </div>
                         )}

@@ -12,6 +12,7 @@ import {
   Sparkles,
   Mail
 } from "lucide-react";
+import UpgradeButton from "@/components/UpgradeButton";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -157,9 +158,10 @@ export default function SettingsPage() {
                     <p className="text-3xl font-black text-white italic">Free Evolution</p>
                     <p className="text-xs text-zinc-500 mt-2 leading-relaxed">You are currently on the free version. Upgrade to <span className="text-white font-bold">GlowryAI Pro</span> to unlock unlimited biometric scans and detailed AI skincare routines.</p>
                   </div>
-                  <button className="w-full py-4 rounded-2xl bg-white text-black font-black uppercase tracking-widest text-xs hover:bg-cyan-400 transition-colors shadow-[0_10px_20px_rgba(255,255,255,0.05)]">
-                     Upgrade to Pro ($9.99/mo)
-                  </button>
+                  <UpgradeButton
+                    title="Upgrade to Pro ($9.99/mo)"
+                    className="w-full py-4 rounded-2xl bg-white text-black font-black uppercase tracking-widest text-xs hover:bg-cyan-400 transition-colors shadow-[0_10px_20px_rgba(255,255,255,0.05)]"
+                  />
                </div>
             </div>
           )}

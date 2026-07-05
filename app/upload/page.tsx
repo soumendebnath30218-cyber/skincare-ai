@@ -9,6 +9,7 @@ import fpPromise from '@fingerprintjs/fingerprintjs';
 import {
   UploadCloud, CheckCircle2, XCircle, AlertTriangle, Sparkles, ArrowRight, Activity, RefreshCcw, Lock, Clock, Trophy, AlertOctagon
 } from "lucide-react";
+import UpgradeButton from "@/components/UpgradeButton";
 
 // 🌟 HYBRID ENGINE IMPORTS 🌟
 import { checkImageBrightness } from '@/utils/imageUtils';
@@ -570,9 +571,10 @@ export default function UploadPage() {
            </div>
            <h2 className="mb-2 text-2xl font-black text-white italic">Free Scan Limit Reached</h2>
            <p className="mb-8 text-sm text-zinc-400">You have already used your lifetime free biometric scan on this device. Upgrade to PRO for unlimited daily scans and your 30-Day Master Plan.</p>
-           <button onClick={() => openSignIn({ fallbackRedirectUrl: "/dashboard" } as any)} className="inline-block w-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 px-8 py-4 font-bold text-black transition-transform hover:scale-105 uppercase tracking-widest text-xs shadow-[0_0_20px_rgba(52,211,153,0.4)]">
-             Unlock PRO Access
-           </button>
+           <UpgradeButton
+             title="Unlock PRO Access"
+             className="inline-block w-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 px-8 py-4 font-bold text-black transition-transform hover:scale-105 uppercase tracking-widest text-xs shadow-[0_0_20px_rgba(52,211,153,0.4)]"
+           />
            <button onClick={() => window.location.href = '/'} className="mt-4 text-[10px] text-zinc-500 uppercase tracking-widest hover:text-white transition-colors">
              Go Back to Home
            </button>
@@ -907,13 +909,18 @@ export default function UploadPage() {
                          {isProUser ? "Your personalized 30-Day Glow-Up Plan and symmetry report are now active." : "Unlock your personalized 30-Day Glow-Up Plan, view your full symmetry report, and reveal your highest aesthetic potential."}
                        </p>
 
-                       <button onClick={handleUnlockReport} className="group relative inline-flex w-full items-center justify-center rounded-2xl py-4 text-sm font-black text-slate-950 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                         <span className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 bg-[length:200%_auto] animate-bg-pan opacity-100" />
-                         <span className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 shadow-[0_0_25px_rgba(34,211,238,0.6)] blur-sm opacity-70 group-hover:opacity-100 transition-opacity duration-500" />
-                         <span className="relative flex items-center gap-2 uppercase tracking-widest">
-                           {isProUser ? "Go To Pro Dashboard" : "Unlock Everything - $9.99"}
-                         </span>
-                       </button>
+                       {isProUser ? (
+                         <button onClick={handleUnlockReport} className="group relative inline-flex w-full items-center justify-center rounded-2xl py-4 text-sm font-black text-slate-950 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                           <span className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 bg-[length:200%_auto] animate-bg-pan opacity-100" />
+                           <span className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 shadow-[0_0_25px_rgba(34,211,238,0.6)] blur-sm opacity-70 group-hover:opacity-100 transition-opacity duration-500" />
+                           <span className="relative flex items-center gap-2 uppercase tracking-widest">Go To Pro Dashboard</span>
+                         </button>
+                       ) : (
+                         <UpgradeButton
+                           title="Unlock Everything - $9.99"
+                           className="group relative inline-flex w-full items-center justify-center rounded-2xl py-4 text-sm font-black text-slate-950 bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 hover:scale-[1.02] active:scale-[0.98] uppercase tracking-widest shadow-[0_0_25px_rgba(34,211,238,0.6)]"
+                         />
+                       )}
 
                        <div className="mb-6 border-t border-white/5 pt-5 text-left mt-6">
                          <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 mb-4">Deep Aesthetic Analysis</h4>

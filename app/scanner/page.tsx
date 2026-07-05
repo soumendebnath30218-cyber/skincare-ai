@@ -10,6 +10,7 @@ import fpPromise from '@fingerprintjs/fingerprintjs';
 import { 
   ScanFace, Sun, Maximize, ShieldCheck, AlertCircle, Lock, Activity, RefreshCcw, CheckCircle2, Clock, Trophy, Sparkles, AlertOctagon
 } from "lucide-react";
+import UpgradeButton from "@/components/UpgradeButton";
 
 // 🌟 NEW HYBRID ENGINE IMPORTS 🌟
 import { checkImageBrightness } from '@/utils/imageUtils';
@@ -527,9 +528,10 @@ export default function ScannerPage() {
            </div>
            <h2 className="mb-2 text-2xl font-black text-white italic">Free Scan Limit Reached</h2>
            <p className="mb-8 text-sm text-zinc-400">You have already used your lifetime free biometric scan on this device. Upgrade to PRO for unlimited scans and your 30-Day Master Plan.</p>
-           <button onClick={() => openSignIn({ fallbackRedirectUrl: "/dashboard" } as any)} className="inline-block w-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 px-8 py-4 font-bold text-black transition-transform hover:scale-105 uppercase tracking-widest text-xs shadow-[0_0_20px_rgba(52,211,153,0.4)]">
-             Unlock PRO Access
-           </button>
+           <UpgradeButton
+             title="Unlock PRO Access"
+             className="inline-block w-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 px-8 py-4 font-bold text-black transition-transform hover:scale-105 uppercase tracking-widest text-xs shadow-[0_0_20px_rgba(52,211,153,0.4)]"
+           />
            <button onClick={() => window.location.href = '/'} className="mt-4 text-[10px] text-zinc-500 uppercase tracking-widest hover:text-white transition-colors">
              Go Back to Home
            </button>
