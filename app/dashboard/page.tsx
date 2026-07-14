@@ -9,6 +9,8 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { CheckCircle2, Circle, Droplets, Moon, Sun, Wind, Camera, Loader2, ArrowUpRight, ArrowDownRight, Share2, Sparkles, ArrowRight, Activity } from "lucide-react";
 import { toPng } from "html-to-image"; 
 import React from "react";
+import { redirect } from 'next/navigation';
+import { auth, currentUser } from '@clerk/nextjs/server';
 
 // 🌟 Supabase কানেকশন 🌟
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -83,6 +85,33 @@ export default function DashboardPage() {
   ]);
   const [yesterdayScore, setYesterdayScore] = useState(6.75);
 
+  // const { userId } = await auth(); // REMOVE
+  // const user_clerk = await currentUser(); // REMOVE
+  // if (!userId) { // REMOVE
+  //   redirect('/sign-in'); // REMOVE
+  // } // REMOVE
+  // const supabase = createClient( // REMOVE
+  //   process.env.NEXT_PUBLIC_SUPABASE_URL!, // REMOVE
+  //   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY! // REMOVE
+  // ); // REMOVE
+  // const { data: userRecord } = await supabase // REMOVE
+  //   .from('users') // REMOVE
+  //   .select('*') // REMOVE
+  //   .eq('user_id', userId) // REMOVE
+  //   .single(); // REMOVE
+  // if (!userRecord) { // REMOVE
+  //   await supabase.from('users').insert([ // REMOVE
+  //     { // REMOVE
+  //       user_id: userId, // REMOVE
+  //       email: user_clerk?.emailAddresses[0]?.emailAddress, // REMOVE
+  //       is_subscribed: false // REMOVE
+  //     } // REMOVE
+  //   ]); // REMOVE
+  //   redirect('/pricing'); // REMOVE
+  // } // REMOVE
+  // if (userRecord && !userRecord.is_subscribed) { // REMOVE
+  //   redirect('/pricing'); // REMOVE
+  // } // REMOVE
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
       router.push("/");
@@ -110,7 +139,7 @@ export default function DashboardPage() {
             setMelaninEvenness(parsedData.melanin_evenness || null);
 
             if (localImage) setImage(localImage);
-            
+
             // 🚨 STEP 1 IMPLEMENTED: Commented out to prevent dashboard from inserting duplicate data 🚨
             // await saveNewScanToDB(parsedData);
         } catch (e) {
@@ -144,16 +173,16 @@ export default function DashboardPage() {
         setAnalysis({
           score: latestData.score,
           basic_flaws: latestData.problems || [],
-          routine: "", 
+          routine: "",
           glow_index: latestData.glow_index || 0,
           symmetry_score: latestData.symmetry_score || 0,
           golden_ratio_match: latestData.golden_ratio_match || 0,
           melanin_evenness: latestData.melanin_evenness || "",
-          todays_current_problems: [], 
-          todays_solution: "", 
-          premium_30_day_cosmetic: [], 
-          premium_30_day_diet: [], 
-          disclaimer: "", 
+          todays_current_problems: [],
+          todays_solution: "",
+          premium_30_day_cosmetic: [],
+          premium_30_day_diet: [],
+          disclaimer: "",
         });
         setGlowIndex(latestData.glow_index || null);
         setSymmetryScore(latestData.symmetry_score || null);
@@ -228,20 +257,20 @@ export default function DashboardPage() {
 
   const getIconComponent = (iconString: string): React.ReactNode => {
     switch (iconString) {
-      case "<Droplets className=\"w-4 h-4\" />": return <Droplets className="w-4 h-4" />;
-      case "<Sun className=\"w-4 h-4\" />": return <Sun className="w-4 h-4" />;
-      case "<Wind className=\"w-4 h-4\" />": return <Wind className="w-4 h-4" />;
-      case "<Moon className=\"w-4 h-4\" />": return <Moon className="w-4 h-4" />;
+      case '<Droplets className="w-4 h-4" />': return <Droplets className="w-4 h-4" />;
+      case '<Sun className="w-4 h-4" />': return <Sun className="w-4 h-4" />;
+      case '<Wind className="w-4 h-4" />': return <Wind className="w-4 h-4" />;
+      case '<Moon className="w-4 h-4" />': return <Moon className="w-4 h-4" />;
       default: return null;
     }
   };
 
   const getIconString = (iconComponent: React.ReactNode): string => {
     if (React.isValidElement(iconComponent)) {
-      if (iconComponent.type === Droplets) return "<Droplets className=\"w-4 h-4\" />";
-      if (iconComponent.type === Sun) return "<Sun className=\"w-4 h-4\" />";
-      if (iconComponent.type === Wind) return "<Wind className=\"w-4 h-4\" />";
-      if (iconComponent.type === Moon) return "<Moon className=\"w-4 h-4\" />";
+      if (iconComponent.type === Droplets) return '<Droplets className="w-4 h-4" />';
+      if (iconComponent.type === Sun) return '<Sun className="w-4 h-4" />';
+      if (iconComponent.type === Wind) return '<Wind className="w-4 h-4" />';
+      if (iconComponent.type === Moon) return '<Moon className="w-4 h-4" />';
     }
     return "";
   };
@@ -273,10 +302,10 @@ export default function DashboardPage() {
 
   const createDefaultRoutine = async (userId: string) => {
     const defaultTasksStrings: TaskFromDB[] = [
-      { id: 1, text: "Drink 3L Water", completed: false, icon: "<Droplets className=\"w-4 h-4\" />" },
-      { id: 2, text: "AM Skincare Routine", completed: false, icon: "<Sun className=\"w-4 h-4\" />" },
-      { id: 3, text: "10 Mins Face Yoga", completed: false, icon: "<Wind className=\"w-4 h-4\" />" },
-      { id: 4, text: "PM Skincare Routine", completed: false, icon: "<Moon className=\"w-4 h-4\" />" },
+      { id: 1, text: "Drink 3L Water", completed: false, icon: '<Droplets className="w-4 h-4" />' },
+      { id: 2, text: "AM Skincare Routine", completed: false, icon: '<Sun className="w-4 h-4" />' },
+      { id: 3, text: "10 Mins Face Yoga", completed: false, icon: '<Wind className="w-4 h-4" />' },
+      { id: 4, text: "PM Skincare Routine", completed: false, icon: '<Moon className="w-4 h-4" />' },
     ];
     try {
       const { error } = await supabase
@@ -322,12 +351,11 @@ export default function DashboardPage() {
 
   const handleShare = async () => {
     if (!shareCardRef.current) return;
-    
     try {
       const dataUrl = await toPng(shareCardRef.current, {
         cacheBust: true,
-        backgroundColor: "#09090b", 
-        pixelRatio: 2 
+        backgroundColor: "#09090b",
+        pixelRatio: 2
       });
 
       if (navigator.share) {
@@ -409,7 +437,7 @@ export default function DashboardPage() {
   return (
     // 🌟 Full Page Smooth Animation 🌟
     <div className="text-zinc-100 font-sans p-6 md:p-10 pb-20 w-full bg-[#030306] min-h-screen relative overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-1000">
-      
+
       {/* 🌟 Background Glowing Orbs 🌟 */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none"></div>
@@ -497,12 +525,12 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 bg-zinc-950/50 backdrop-blur-xl border border-white/5 rounded-[2rem] p-8 relative overflow-hidden group">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-cyan-400 opacity-50"></div>
-            
+
             <div className="flex justify-between items-center mb-8">
               <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500">Last 7 Days (Overview)</h3>
               <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full font-bold shadow-[0_0_10px_rgba(52,211,153,0.2)]">Live Data</span>
             </div>
-            
+
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 {/* 🌟 ADVANCED GLOWING LINE CHART 🌟 */}
@@ -520,17 +548,17 @@ export default function DashboardPage() {
                       </feMerge>
                     </filter>
                   </defs>
-                  
+
                   <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
                   <XAxis dataKey="day" stroke="#71717a" fontSize={10} tickLine={false} axisLine={false} dy={10} />
                   <YAxis domain={['dataMin - 0.2', 'dataMax + 0.2']} hide={true} />
-                  
+
                   <Tooltip
                     contentStyle={{ backgroundColor: "rgba(9, 9, 11, 0.9)", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", boxShadow: "0 0 30px rgba(52,211,153,0.2)" }}
                     itemStyle={{ color: "#34d399", fontWeight: "900", fontSize: "16px" }}
                     cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 2, strokeDasharray: '4 4' }}
                   />
-                  
+
                   <Area
                     type="monotone"
                     dataKey="score"
@@ -559,8 +587,8 @@ export default function DashboardPage() {
                   key={task.id}
                   onClick={() => toggleTask(task.id)}
                   className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${
-                    task.completed 
-                      ? "bg-emerald-500/10 border-emerald-500/30 opacity-70 shadow-[0_0_15px_rgba(52,211,153,0.1)]" 
+                    task.completed
+                      ? "bg-emerald-500/10 border-emerald-500/30 opacity-70 shadow-[0_0_15px_rgba(52,211,153,0.1)]"
                       : "bg-white/5 border-white/5 hover:border-white/10 hover:bg-white/10"
                   }`}
                     >
@@ -568,7 +596,7 @@ export default function DashboardPage() {
                     <div className={task.completed ? "text-emerald-400" : "text-zinc-500"}>{task.icon}</div>
                     <span className={`text-xs font-medium ${task.completed ? "text-emerald-400/80 line-through" : "text-zinc-300"}`}>{task.text}</span>
                   </div>
-                  {task.completed ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Circle className="w-4 h-4 text-zinc-800" />}
+                  {task.completed ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Circle className="w-4 h-4 text-zinc-800" />}\
                 </button>
               ))}
             </div>
@@ -581,7 +609,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* 🌟 PURE VISUAL COMPARISON CARD (NO WORDS IN MIDDLE) 🌟 */}
             <div className="bg-zinc-950/80 backdrop-blur-xl border border-white/5 rounded-[2.5rem] p-8 relative overflow-hidden group hover:border-white/10 transition-all duration-500">
-              
+
               {/* Dynamic Background Flare */}
               <div className="absolute top-0 right-0 w-[200px] h-[200px] bg-gradient-to-b from-cyan-500/10 to-transparent rounded-full blur-[60px] pointer-events-none transition-all group-hover:from-cyan-500/20"></div>
 
@@ -591,7 +619,7 @@ export default function DashboardPage() {
 
               {/* Central Pill UI */}
               <div className="relative z-10 bg-black/40 border border-white/5 rounded-full p-2 flex items-center justify-between shadow-inner">
-                
+
                 {/* YESTERDAY */}
                 <div className="pl-6 py-2 flex flex-col justify-center">
                   <span className="text-[9px] uppercase font-bold text-zinc-500 tracking-[0.2em] mb-1">Yesterday</span>
@@ -629,7 +657,7 @@ export default function DashboardPage() {
             {/* 🌸 SAFE DESIGN VIRAL SHARE CARD (CRASH-FREE) 🌸 */}
             <div ref={shareCardRef} className="p-8 rounded-[2.5rem] bg-[#09090b] border border-[#ffffff1a] text-center relative overflow-hidden flex flex-col justify-center">
               <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#22d3ee_1px,transparent_1px)] [background-size:20px_20px]"></div>
-              
+
               <div className="relative z-10">
                 <h3 className="text-2xl font-black italic tracking-tighter text-white mb-2">
                   My <span className="text-[#f472b6] drop-shadow-[0_0_10px_rgba(244,114,182,0.5)]">GlowUp Journey</span>
@@ -659,7 +687,7 @@ export default function DashboardPage() {
 
         </div>
       </div>
-      
+
       {/* Required for the new running light animation */}
       <style jsx global>{`
         @keyframes bg-pan {
@@ -671,3 +699,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+

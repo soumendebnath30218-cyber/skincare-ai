@@ -1,9 +1,10 @@
 "use client";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useAuth } from "@clerk/nextjs";
 import { useState } from "react";
 
 export default function UpgradeButton({ title = "Upgrade to Pro", className = "" }: { title?: string, className?: string }) {
   const { user } = useUser();
+      const { getToken } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const handleUpgrade = async () => {
@@ -13,8 +14,14 @@ export default function UpgradeButton({ title = "Upgrade to Pro", className = ""
     }
     setLoading(true);
     try {
+      const token = await getToken();
+
       const res = await fetch('/api/checkout', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ email: user.primaryEmailAddress?.emailAddress })
       });
       const data = await res.json();
@@ -33,3 +40,5 @@ export default function UpgradeButton({ title = "Upgrade to Pro", className = ""
     </button>
   );
 }
+
+
