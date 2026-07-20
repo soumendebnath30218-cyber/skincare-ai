@@ -4,7 +4,7 @@ import "./globals.css";
 import { ClerkProvider } from '@clerk/nextjs';
 
 // 🌟 এই লাইনটাই মেইন, ডাবল components দেওয়া হয়েছে 🌟
-import CookieBanner from "./components/components/CookieBanner"; 
+import CookieBanner from "@/components/CookieBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

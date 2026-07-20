@@ -780,8 +780,6 @@ export default function UploadPage() {
                 </div>
               ) : (
                 <>
-                  <div className="space-y-6">
-                    
                     <div className="flex flex-col items-center justify-center">
                       <div className="relative flex items-center justify-center bg-zinc-950 rounded-full shadow-[0_0_30px_rgba(34,211,238,0.15)] p-2">
                         <svg className="w-36 h-36 transform -rotate-90">
@@ -880,8 +878,6 @@ export default function UploadPage() {
                            </div>
                        )}
                     </div>
-                  </div>
-
                   <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-b from-cyan-900/30 via-zinc-950 to-zinc-950 p-1 border border-cyan-500/30 shadow-[0_0_40px_rgba(34,211,238,0.15)] text-center mt-8">
                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-24 bg-cyan-500/20 blur-[60px] rounded-full pointer-events-none"></div>
                      

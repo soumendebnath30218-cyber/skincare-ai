@@ -1,0 +1,12 @@
+{
+    "product_cart": [
+      {
+        "product_id": "pdt_0NhPHbZJ8Y9jhfmkRl7Mr",
+        "quantity": 1
+      }
+    ],
+    "customer": {
+      "email": "test@test.com"
+    },
+    "return_url": "http://localhost:3000/checkout-redirect"
+  }
