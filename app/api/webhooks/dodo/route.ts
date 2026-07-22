@@ -17,12 +17,13 @@ export async function POST(req: Request) {
     // Dodo Payments ডেটা 'data' অবজেক্টের ভেতরেও পাঠাতে পারে
     const paymentData = payload.data || payload; 
     
-    // ইভেন্টের নাম চেক করছি (সব রকম ভেরিয়েশন কভার করা হলো)
-    const isSuccess = payload.type === "payment.succeeded" || 
-                      payload.event === "payment_success" || 
-                      paymentData.status === "succeeded" || 
-                      paymentData.status === "completed";
-
+// ইভেন্টের নাম চেক করছি (নতুন subscription.active যোগ করা হলো)
+const isSuccess = payload.type === "payment.succeeded" || 
+                  payload.event === "payment_success" || 
+                  payload.type === "subscription.active" || // <-- এই লাইনটা যোগ হলো
+                  paymentData.status === "succeeded" || 
+                  paymentData.status === "completed" ||
+                  paymentData.status === "active"; // <-- এই লাইনটাও যোগ হলো
     if (isSuccess) {
       // মেটাডেটা থেকে Clerk ইউজার আইডি বের করা
       const metadata = paymentData.metadata || payload.metadata || {};
