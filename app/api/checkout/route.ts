@@ -51,6 +51,7 @@ export async function POST(request: Request) {
       product_cart: [{ product_id: productId, quantity: 1 }],
       customer: { email: email },
       return_url: returnUrl,
+      metadata: { clerkUserId: userId } // <-- এই জাদুকরী লাইনটা যোগ করো
     };
 
     console.log("Sending payload to Dodo:", JSON.stringify(dodoPayload, null, 2));
