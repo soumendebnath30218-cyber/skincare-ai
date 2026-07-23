@@ -24,7 +24,7 @@ export default function CheckoutRedirectPage() {
         >
           Go to Pro Dashboard
         </Link>
-
+                    
       </div>
     </div>
   );
