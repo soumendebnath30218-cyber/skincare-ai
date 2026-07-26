@@ -43,7 +43,22 @@ export async function POST(request: Request) {
 
     const productId = process.env.NEXT_PUBLIC_DODO_PRODUCT_ID || 'pdt_0NhPHbZJ8Y9jhfmkRl7Mr';
     console.log("Using Dodo Product ID:", productId);
-    const returnUrl = process.env.NEXT_PUBLIC_DODO_RETURN_URL || 'http://localhost:3000/checkout-redirect';
+
+    // env var থেকে raw value নিয়ে trim করা হচ্ছে, extra space/newline থাকলে যাতে বাদ যায়
+    const rawReturnUrl = (process.env.NEXT_PUBLIC_DODO_RETURN_URL || 'http://localhost:3000/checkout-redirect').trim();
+
+    // URL valid কিনা সেইটা এখানেই যাচাই করা হচ্ছে, Dodo পর্যন্ত পাঠানোর আগেই
+    let returnUrl: string;
+    try {
+      returnUrl = new URL(rawReturnUrl).toString();
+    } catch (urlError) {
+      console.error("Invalid NEXT_PUBLIC_DODO_RETURN_URL env value:", JSON.stringify(rawReturnUrl));
+      return NextResponse.json(
+        { error: 'Server configuration error: DODO_RETURN_URL is not a valid URL' },
+        { status: 500 }
+      );
+    }
+
     console.log("Using Dodo Return URL:", returnUrl);
 
     // Dodo-র সঠিক পেলোড স্ট্রাকচার
@@ -51,13 +66,12 @@ export async function POST(request: Request) {
       product_cart: [{ product_id: productId, quantity: 1 }],
       customer: { email: email },
       return_url: returnUrl,
-      metadata: { clerkUserId: userId } // <-- এই জাদুকরী লাইনটা যোগ করো
+      metadata: { clerkUserId: userId }
     };
 
     console.log("Sending payload to Dodo:", JSON.stringify(dodoPayload, null, 2));
     console.log("API Key starts with:", dodoApiKey.substring(0, 10));
 
-    // Cursor-এর ভুল লিঙ্কটা পাল্টে আবার আসল লিঙ্ক বসানো হয়েছে
     const response = await fetch('https://test.dodopayments.com/checkouts', {
       method: 'POST',
       headers: {
