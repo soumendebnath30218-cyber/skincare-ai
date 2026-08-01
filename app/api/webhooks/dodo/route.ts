@@ -24,7 +24,6 @@ function verifySignature(
     .update(signedPayload)
     .digest("base64");
 
-  // Header ফরম্যাট: "v1,<signature>" (একাধিক signature space দিয়ে আলাদা করা থাকতে পারে)
   const providedSignatures = signatureHeader
     .split(" ")
     .map((s) => s.split(",")[1])
@@ -45,6 +44,15 @@ export async function POST(req: Request) {
     const webhookSignature = req.headers.get("webhook-signature") || "";
     const secret = process.env.DODO_WEBHOOK_SECRET;
 
+    // ============ DEBUG LINE — কাজ হলে পরে মুছে ফেলতে হবে ============
+    console.log(
+      "DEBUG SECRET - length:", secret?.length,
+      "| first5:", secret?.substring(0, 5),
+      "| last5:", secret?.substring((secret?.length || 5) - 5)
+    );
+    console.log("DEBUG - webhookId:", webhookId, "| timestamp:", webhookTimestamp, "| signatureHeader:", webhookSignature);
+    // ===================================================================
+
     if (!secret) {
       console.error("DODO_WEBHOOK_SECRET is not set.");
       return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
@@ -61,7 +69,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
-    // Duplicate event guard
     if (processedWebhookIds.has(webhookId)) {
       console.log(`Webhook ${webhookId} already processed, skipping.`);
       return NextResponse.json({ message: "Already processed" }, { status: 200 });
@@ -80,14 +87,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "No user id in metadata" }, { status: 200 });
     }
 
-    // Subscription active রাখা উচিত এমন events
     const activeEvents = [
       "payment.succeeded",
       "subscription.active",
       "subscription.renewed",
     ];
 
-    // Subscription বন্ধ করা উচিত এমন events
     const inactiveEvents = [
       "subscription.cancelled",
       "subscription.expired",
@@ -102,7 +107,6 @@ export async function POST(req: Request) {
     } else if (inactiveEvents.includes(eventType) || data.status === "cancelled" || data.status === "expired") {
       shouldBeSubscribed = false;
     } else {
-      // subscription.updated এর মতো event — status field দিয়ে সিদ্ধান্ত নাও
       if (data.status === "active") shouldBeSubscribed = true;
       else if (data.status) shouldBeSubscribed = false;
     }
@@ -112,14 +116,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "No action needed" }, { status: 200 });
     }
 
-    // Clerk আপডেট
     const client = await clerkClient();
     await client.users.updateUser(userId, {
       publicMetadata: { isPro: shouldBeSubscribed },
     });
     console.log(`Clerk: User ${userId} isPro = ${shouldBeSubscribed}`);
 
-    // Supabase আপডেট — কতগুলো row আপডেট হলো সেটাও চেক করা হচ্ছে
     const { data: updatedRows, error } = await supabase
       .from('users')
       .update({ is_subscribed: shouldBeSubscribed })
