@@ -19,8 +19,13 @@ function verifySignature(
   secret: string
 ): boolean {
   const signedPayload = `${webhookId}.${timestamp}.${rawBody}`;
+
+  // Svix secret "whsec_" prefix diye shuru hoy — eta kete
+  // baki ongsho ta base64-decode korte hobe HMAC key banaanor age
+  const secretBytes = Buffer.from(secret.replace(/^whsec_/, ""), "base64");
+
   const expected = crypto
-    .createHmac("sha256", secret)
+    .createHmac("sha256", secretBytes)
     .update(signedPayload)
     .digest("base64");
 
