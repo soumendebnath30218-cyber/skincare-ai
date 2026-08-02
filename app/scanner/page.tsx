@@ -776,7 +776,8 @@ export default function ScannerPage() {
                       </ul>
                     </div>
                     
-                    <div className={`relative bg-zinc-900/50 border border-white/10 rounded-[2rem] p-6 space-y-6 transition-all duration-500 ${!userId ? 'blur-md select-none opacity-50' : ''}`}>
+                    {/* 🌟 UI FIX: Removed blur from wrapper, added Conditional Locks 🌟 */}
+                    <div className="relative bg-zinc-900/50 border border-white/10 rounded-[2rem] p-6 space-y-6 transition-all duration-500">
                        <div className="bg-white/5 rounded-2xl p-4">
                          <p className="text-[10px] text-zinc-500 font-bold uppercase mb-2 flex items-center gap-2"><Activity className="w-3 h-3" /> Routine</p>
                          <p className="text-sm text-zinc-300">{skinAnalysis?.routine || "AM: Gentle Cleanser, Vitamin C, SPF. PM: Double Cleanse, Retinol, Night Cream."}</p>
@@ -785,29 +786,43 @@ export default function ScannerPage() {
                        <div className="relative overflow-hidden rounded-2xl border border-emerald-500/40 bg-gradient-to-b from-emerald-500/10 to-transparent p-1 mt-6 shadow-[0_0_20px_rgba(52,211,153,0.15)] group cursor-default transition-all">
                           <div className="bg-zinc-950/80 rounded-xl p-5 backdrop-blur-sm h-full w-full">
                               <div className="flex justify-between items-center mb-4 relative z-10">
-                                <h3 className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-2">
+                                <h3 className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 ${isProUser ? 'text-emerald-400' : 'text-amber-400'}`}>
                                   <Activity className="w-4 h-4" /> Geometry & Ratio Map
                                 </h3>
-                                <span className="px-2 py-1 rounded bg-emerald-500/20 text-[9px] text-emerald-300 font-bold tracking-widest border border-emerald-500/30">PRO UNLOCKED</span>
+                                {isProUser ? (
+                                   <span className="px-2 py-1 rounded bg-emerald-500/20 text-[9px] text-emerald-300 font-bold tracking-widest border border-emerald-500/30">PRO UNLOCKED</span>
+                                ) : (
+                                   <span className="px-2 py-1 rounded bg-amber-500/20 text-[9px] text-amber-500 font-bold tracking-widest border border-amber-500/30">LOCKED</span>
+                                )}
                               </div>
                               <div className="relative h-44 w-full rounded-lg overflow-hidden bg-black flex items-center justify-center">
-                                 <img src={capturedImage} alt="Symmetry Unlocked" className="absolute inset-0 w-full h-full object-cover opacity-80 transform scale-x-[-1]" />
+                                 <img src={capturedImage} alt="Symmetry Map" className={`absolute inset-0 w-full h-full object-cover transform scale-x-[-1] ${!isProUser ? 'opacity-40 blur-sm' : 'opacity-80'}`} />
                                  
-                                 <div className="absolute inset-0 flex items-center justify-center opacity-80">
-                                   <div className="w-[1px] h-full bg-cyan-400/80 shadow-[0_0_10px_#22d3ee]"></div>
-                                   <div className="h-[1px] w-full bg-cyan-400/80 absolute shadow-[0_0_10px_#22d3ee]"></div>
-                                   <div className="w-28 h-36 border border-emerald-400/60 rounded-[40%] absolute shadow-[0_0_15px_rgba(52,211,153,0.4)]"></div>
-                                   <div className="w-full h-[1px] bg-amber-500/60 absolute translate-y-8"></div>
-                                 </div>
-                                 
-                                 <div className="absolute bottom-2 left-2 right-2 flex justify-between z-20">
-                                    <div className="bg-black/70 backdrop-blur-md px-2 py-1 rounded border border-emerald-500/30 text-emerald-300 text-[9px] font-bold">
-                                      Symmetry: {skinAnalysis?.symmetry_score ? `${skinAnalysis.symmetry_score}%` : '--'}
-                                    </div>
-                                    <div className="bg-black/70 backdrop-blur-md px-2 py-1 rounded border border-cyan-500/30 text-cyan-300 text-[9px] font-bold">
-                                      Ratio: {skinAnalysis?.golden_ratio_match || '--'}
-                                    </div>
-                                 </div>
+                                 {isProUser ? (
+                                   <>
+                                     <div className="absolute inset-0 flex items-center justify-center opacity-80">
+                                       <div className="w-[1px] h-full bg-cyan-400/80 shadow-[0_0_10px_#22d3ee]"></div>
+                                       <div className="h-[1px] w-full bg-cyan-400/80 absolute shadow-[0_0_10px_#22d3ee]"></div>
+                                       <div className="w-28 h-36 border border-emerald-400/60 rounded-[40%] absolute shadow-[0_0_15px_rgba(52,211,153,0.4)]"></div>
+                                       <div className="w-full h-[1px] bg-amber-500/60 absolute translate-y-8"></div>
+                                     </div>
+                                     <div className="absolute bottom-2 left-2 right-2 flex justify-between z-20">
+                                        <div className="bg-black/70 backdrop-blur-md px-2 py-1 rounded border border-emerald-500/30 text-emerald-300 text-[9px] font-bold">
+                                          Symmetry: {skinAnalysis?.symmetry_score ? `${skinAnalysis.symmetry_score}%` : '--'}
+                                        </div>
+                                        <div className="bg-black/70 backdrop-blur-md px-2 py-1 rounded border border-cyan-500/30 text-cyan-300 text-[9px] font-bold">
+                                          Ratio: {skinAnalysis?.golden_ratio_match || '--'}
+                                        </div>
+                                     </div>
+                                   </>
+                                 ) : (
+                                   <div className="absolute inset-0 flex flex-col items-center justify-center z-30">
+                                      <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center mb-2 border border-amber-500/40">
+                                         <Lock className="w-5 h-5 text-amber-500" />
+                                      </div>
+                                      <p className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest">Facial Geometry Hidden</p>
+                                   </div>
+                                 )}
                               </div>
                           </div>
                        </div>
@@ -821,7 +836,12 @@ export default function ScannerPage() {
                        <div className="relative w-32 h-32 mx-auto mb-6 group cursor-default">
                          <div className="absolute inset-0 bg-emerald-400/20 rounded-full animate-pulse blur-xl"></div>
                          <div className="w-full h-full rounded-full overflow-hidden border-[3px] border-emerald-400/50 relative z-10 bg-black">
-                           <img src={capturedImage} className="w-full h-full object-cover saturate-200 brightness-125 scale-110 transform scale-x-[-1] transition-all duration-700" />
+                           <img src={capturedImage} className={`w-full h-full object-cover saturate-200 brightness-125 scale-110 transform scale-x-[-1] transition-all duration-700 ${!isProUser ? 'opacity-70 blur-[2px]' : ''}`} />
+                           {!isProUser && (
+                              <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/30">
+                                 <Lock className="w-8 h-8 text-white drop-shadow-lg opacity-90" />
+                              </div>
+                           )}
                          </div>
                          <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap bg-gradient-to-r from-emerald-400 to-cyan-400 text-black px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest z-20 shadow-[0_4px_15px_rgba(52,211,153,0.5)]">
                            {potentialScore}/10 POTENTIAL
@@ -831,11 +851,18 @@ export default function ScannerPage() {
                        <h3 className="text-xl font-extrabold text-white mb-2 bg-gradient-to-r from-emerald-300 via-cyan-300 to-teal-300 bg-clip-text text-transparent">Your Full Aesthetic Profile</h3>
                        <p className="text-xs text-zinc-400 mb-6 leading-relaxed px-2">Your personalized 30-Day Glow-Up Plan and symmetry report are now active.</p>
 
-                       <button onClick={handleUnlockReport} className="group relative inline-flex w-full items-center justify-center rounded-2xl py-4 text-sm font-black text-slate-950 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                         <span className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 bg-[length:200%_auto] animate-bg-pan opacity-100" />
-                         <span className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 shadow-[0_0_25px_rgba(34,211,238,0.6)] blur-sm opacity-70 group-hover:opacity-100 transition-opacity duration-500" />
-                         <span className="relative flex items-center gap-2 uppercase tracking-widest">Go To Pro Dashboard</span>
-                       </button>
+                       {/* 🌟 UI FIX: Conditional Button Rendering 🌟 */}
+                       {isProUser ? (
+                          <button onClick={handleUnlockReport} className="group relative inline-flex w-full items-center justify-center rounded-2xl py-4 text-sm font-black text-slate-950 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                            <span className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 bg-[length:200%_auto] animate-bg-pan opacity-100" />
+                            <span className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 shadow-[0_0_25px_rgba(34,211,238,0.6)] blur-sm opacity-70 group-hover:opacity-100 transition-opacity duration-500" />
+                            <span className="relative flex items-center gap-2 uppercase tracking-widest">Go To Pro Dashboard</span>
+                          </button>
+                       ) : (
+                          <button onClick={handleUnlockReport} className="w-full rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 py-4 text-[13px] font-black text-slate-950 uppercase tracking-widest shadow-[0_0_25px_rgba(34,211,238,0.5)] hover:scale-[1.02] active:scale-[0.98] transition-all">
+                             Unlock Everything - $9.99
+                          </button>
+                       )}
 
                        <div className="mb-6 border-t border-white/5 pt-5 text-left mt-6">
                          <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 mb-4">Deep Aesthetic Analysis</h4>

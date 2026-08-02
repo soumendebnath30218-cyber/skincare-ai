@@ -148,11 +148,11 @@ export async function POST(req: Request) {
     console.log("📡 Starting Multi-Model AI Analysis...");
     
     const AI_MODELS = [
-      "gemma-4-31b-it",      
-      "gemma-4-26b-a4b-it",      
-      "gemini-3.5-flash",    
-      "gemini-3-flash",      
-      "gemini-2.5-flash"     
+      "gemini-2.5-flash",     // সবচেয়ে fast, প্রথমে try hobe
+      "gemini-3-flash",
+      "gemini-3.5-flash",
+      "gemma-4-26b-a4b-it",
+      "gemma-4-31b-it",       // সবচেয়ে slow, শেষে fallback হিসেবে
     ];
     let aiResult = null;
     let textResponse = "";
