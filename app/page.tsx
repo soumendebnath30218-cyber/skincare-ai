@@ -21,7 +21,7 @@ function Footer() {
         <div className="flex flex-wrap justify-center gap-6 mb-4">
           <Link className="hover:text-[#39ff14] transition-colors" href="/public-privacy">Privacy Policy</Link>
           <Link className="hover:text-[#39ff14] transition-colors" href="/terms">Terms of Service</Link>
-          <a href="mailto:support@yourdomain.com" className="hover:text-[#39ff14] transition-colors">Contact Us</a>
+          <a href="mailto:glowryaiofficial@gmail.com" className="hover:text-[#39ff14] transition-colors">Contact Us</a>
         </div>
         <p>© {new Date().getFullYear()} GlowryAI. All rights reserved.</p>
       </div>
