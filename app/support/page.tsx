@@ -132,12 +132,12 @@ export default function SupportPage() {
             <div className="mt-8 grid grid-cols-2 gap-4">
               {/* Email Us Box - Updated with Mailto link */}
               <a 
-                href="mailto:soumendebnath702@gmail.com" 
+                href="mailto:glowryaiofficial@gmail.com" 
                 className="bg-white/5 border border-white/5 rounded-2xl p-5 flex flex-col items-center justify-center text-center hover:bg-white/10 transition-colors cursor-pointer group"
               >
                 <Mail className="w-6 h-6 text-cyan-400 mb-3 group-hover:scale-110 transition-transform" />
                 <h3 className="text-white font-bold text-sm">Email Us</h3>
-                <p className="text-[10px] sm:text-xs text-zinc-500 mt-1 break-all px-2">soumendebnath702@gmail.com</p>
+                <p className="text-[10px] sm:text-xs text-zinc-500 mt-1 break-all px-2">glowryaiofficial@gmail.com</p>
               </a>
 
               {/* Secure Portal Box */}

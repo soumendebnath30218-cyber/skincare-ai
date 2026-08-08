@@ -32,7 +32,7 @@ export async function POST(request: Request) {
 
     if (userRecord?.is_subscribed) {
       console.log("User is already subscribed, redirecting to pro-dashboard.");
-      return NextResponse.json({ url: '/pro-dashboard' });
+      return NextResponse.json({ url: '/dashboard' });
     }
 
     const dodoApiKey = process.env.DODO_API_KEY;

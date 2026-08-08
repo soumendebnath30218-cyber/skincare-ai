@@ -25,9 +25,21 @@ export async function POST(req: Request) {
     }
 
     let masterPlan = null;
+    let isPro = false; // 👈 Pro স্ট্যাটাস সেভ রাখার জন্য নতুন ভেরিয়েবল
 
     // --- User Authorization & Limits Logic ---
     if (userId) {
+      // 👈 Supabase থেকে ইউজার Pro কি না তা চেক করা হচ্ছে
+      const { data: userData } = await supabase
+        .from("users")
+        .select("is_subscribed")
+        .eq("user_id", userId)
+        .single();
+      
+      if (userData && userData.is_subscribed === true) {
+        isPro = true;
+      }
+
       const { count: scanCount } = await supabase.from("daily_scans").select("*", { count: 'exact', head: true }).eq("user_id", userId);
 
       if (scanCount && scanCount >= 30) {
@@ -62,24 +74,44 @@ export async function POST(req: Request) {
         base64Data = image.split(",")[1];
     }
     
-    // --- Prompt Generation Logic ---
+    // --- 🌟 3-TIER PROMPT GENERATION LOGIC 🌟 ---
     let trackingData = previousScore ? `\nPrevious Final Score: ${previousScore}` : "";
     if (previousIssues) trackingData += `\nPrevious Issues: ${JSON.stringify(previousIssues)}`;
 
     let promptText = ``;
 
-    if (!masterPlan) {
+    if (!isPro) {
+      // 🛑 TIER 1: FREE USER (Minimal API Cost)
+      promptText = `
+        You are a world-class Holistic Dermatologist analyzing a face.
+        
+        🚨 STRICT RULES FOR FREE TIER 🚨:
+        1. HUMAN FACE VALIDATION: First, strictly check if the image is a clear HUMAN face. If it is an animal, an object, a cartoon, or unclear, you MUST set "is_valid_human": false.
+        2. SHORT & PUNCHY ISSUES: The "issues" array MUST contain exactly 4 to 5 short, specific facial skin problems (max 10-15 words each).
+        3. SCORE RULE: Give a "skin_health_score" out of 10 evaluating ONLY acne, texture, and blemishes.
+        4. NO ROUTINES: Do NOT generate any routines, diet plans, or recommendations to save tokens.
+        
+        Return EXACTLY this JSON structure:
+        {
+          "is_valid_human": true,
+          "success": true,
+          "skin_health_score": 7.5,
+          "issues": ["<Short issue 1>", "<Short issue 2>", "<Short issue 3>", "<Short issue 4>"]
+        }
+      `;
+    } else if (isPro && !masterPlan) {
+      // 🏆 TIER 2: PRO USER - DAY 1 (Heavy Baseline Prompt)
       promptText = `
         You are a world-class Holistic Dermatologist analyzing a face.
         
         🚨 CRITICAL RULES FOR 100% NATURAL, HOMEMADE & AFFORDABLE 🚨:
-        1. HUMAN FACE VALIDATION: First, strictly check if the image is a clear HUMAN face. If it is an animal (like a dog/cat), an object, a cartoon, or unclear, you MUST set "is_valid_human": false and keep all other fields empty or dummy.
+        1. HUMAN FACE VALIDATION: First, strictly check if the image is a clear HUMAN face. If invalid, you MUST set "is_valid_human": false.
         2. NO COMMERCIAL WORDS: You are STRICTLY FORBIDDEN from using words like "Toner", "Moisturizer", "Mist", "Balm", "Serum", "Cream", "Cleanser".
         3. SUPER CHEAP & ACCESSIBLE: Use ONLY everyday, extremely affordable kitchen ingredients (e.g., Turmeric, Raw Milk, Honey, Cucumber, Gram Flour/Besan, Coconut Oil, Tomato, Aloe Vera).
-        4. SHORT & PUNCHY ISSUES (UI/UX RULE): The "issues" array MUST contain exactly 4 to 5 short, specific facial skin problems (max 10-15 words).
-        5. 🚨 SCORE RULE (NEW): DO NOT GUESS OVERALL SCORE. Give a "skin_health_score" out of 10 evaluating ONLY acne, texture, and blemishes. (Geometry and symmetry are handled externally).
-        6. 🚨 COMPARISON & EXTRA CARE: Since this is Day 1, for "improvement_status" write exactly "Day 1: Baseline established. Your 30-Day journey begins today!". For "recommendations" (which must be an array with one string), make a SMART decision: If you see a severe/active issue (like active acne, dark circles, or extreme dryness), provide ONE short, specific natural home-remedy tip (e.g., ["Apply raw honey on the active breakout for 10 mins"]). If the skin looks mostly fine or has only minor issues, write exactly: ["Stick strictly to your 30-Day Natural Protocol below. Hydration and natural ingredients are your primary goals for today."]
-        7. Detailed steps for routines and diet.
+        4. SHORT & PUNCHY ISSUES: The "issues" array MUST contain exactly 4 to 5 short, specific facial skin problems (max 10-15 words).
+        5. SCORE RULE: Give a "skin_health_score" out of 10 evaluating ONLY acne, texture, and blemishes.
+        6. COMPARISON & EXTRA CARE: For "improvement_status" write exactly "Day 1: Baseline established. Your 30-Day journey begins today!". For "recommendations", if severe issue exists, give ONE specific natural home-remedy tip. Otherwise, write: ["Stick strictly to your 30-Day Natural Protocol below. Hydration and natural ingredients are your primary goals for today."]
+        7. Detailed steps for routines and diet must be provided.
         
         Return EXACTLY this JSON structure:
         {
@@ -109,19 +141,18 @@ export async function POST(req: Request) {
             { "time": "Dinner", "food": "<Meal>", "benefit": "<Benefit>" }
           ]
         }
-        ${trackingData}
       `;
     } else {
+      // 📈 TIER 3: PRO USER - DAY 2+ TRACKING (Medium Prompt)
       promptText = `
         You are tracking daily holistic progress. Provide highly detailed advice.
         
         🚨 STRICT RULES: 
-        1. HUMAN FACE VALIDATION: First, strictly check if the image is a clear HUMAN face. If it is an animal (like a dog/cat), an object, a cartoon, or unclear, you MUST set "is_valid_human": false and keep all other fields empty or dummy.
+        1. HUMAN FACE VALIDATION: First, strictly check if the image is a clear HUMAN face. If invalid, you MUST set "is_valid_human": false.
         2. NEVER use cosmetic words. Use ONLY super cheap kitchen ingredients.
-        3. SHORT & PUNCHY ISSUES (max 10-15 words per issue).
-        4. 🚨 SCORE RULE (NEW): Provide a "skin_health_score" out of 10 evaluating ONLY skin health (acne, glow, texture). DO NOT calculate overall structure.
-        5. 🚨 COMPARISON & EXTRA CARE: Look at the "Previous Score" and "Previous Issues" provided below. Compare them with your current analysis. In "improvement_status", write 2-3 short, natural sentences explaining what improved, what got worse, or what stayed the same. CRITICAL: Analyze the real data, but DO NOT copy example texts verbatim. You MUST use the REAL previous score and the REAL current score. If the score dropped, you must explicitly state that it decreased. 
-        For "recommendations" (which must be an array with one string), make a SMART decision: If the current analysis shows a new or worsening specific issue, provide ONE short, specific natural home remedy in an array. If the skin is improving or stable, write exactly: ["Stick strictly to your 30-Day Natural Protocol below. Hydration and natural ingredients are your primary goals for today."]
+        3. SHORT & PUNCHY ISSUES (max 10-15 words per issue, exactly 4-5 issues).
+        4. SCORE RULE: Provide a "skin_health_score" out of 10 evaluating ONLY skin health.
+        5. COMPARISON & EXTRA CARE: Compare with "Previous Score" and "Previous Issues". In "improvement_status", write 2-3 short, natural sentences explaining what improved or got worse. CRITICAL: Use REAL previous/current scores. For "recommendations", if a new/worsening issue appears, give ONE specific natural home remedy. If improving/stable, write exactly: ["Stick strictly to your 30-Day Natural Protocol below. Hydration and natural ingredients are your primary goals for today."]
         
         Return EXACTLY this JSON structure:
         {
@@ -129,7 +160,7 @@ export async function POST(req: Request) {
           "success": true,
           "skin_health_score": 7.5,
           "improvement_status": "<Detailed comparison between Yesterday and Today>",
-          "issues": ["<Short specific issue 1>", "<Short specific issue 2>", "<Short specific issue 3>"],
+          "issues": ["<Short specific issue 1>", "<Short specific issue 2>", "<Short specific issue 3>", "<Short specific issue 4>"],
           "recommendations": ["<Smart Extra Care tip OR Generic Message>"],
           "routine": {
             "morning": { "title": "Morning", "steps": ["<step>", "<step>"] },
@@ -240,7 +271,8 @@ export async function POST(req: Request) {
     if (userId) {
       const todayDate = new Date().toISOString().split('T')[0]; 
       
-      if (!masterPlan) {
+      // 👈 শুধুমাত্র Pro ইউজারদের ডে-১ এ মাস্টার প্ল্যান সেভ হবে
+      if (isPro && !masterPlan) {
         console.log("💾 Saving Master Plan & Daily Scan to DB...");
         const { error: masterErr } = await supabase.from("master_glow_plans").insert([{ user_id: userId, cosmetic_routine: aiResult.premium_30_day_cosmetic, diet_plan: aiResult.premium_30_day_diet }]);
         if (masterErr) console.error("🚨 Master Plan DB Error:", masterErr); 
@@ -249,6 +281,7 @@ export async function POST(req: Request) {
         if (dailyErr) console.error("🚨 Daily Scan DB Error:", dailyErr); 
         
       } else {
+        // Free ইউজার অথবা Pro ইউজারের Day 2+ এর জন্য শুধু ডেইলি স্ক্যান সেভ হবে
         console.log("💾 Saving Daily Scan to DB...");
         const { error: dailyErr } = await supabase.from("daily_scans").insert([{ user_id: userId, scan_date: todayDate, analysis_result: JSON.stringify(aiResult), improvement_status: aiResult.improvement_status }]);
         if (dailyErr) console.error("🚨 Daily Scan DB Error:", dailyErr); 

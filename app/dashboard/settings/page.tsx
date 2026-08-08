@@ -12,7 +12,6 @@ import {
   Sparkles,
   Mail
 } from "lucide-react";
-import UpgradeButton from "@/components/UpgradeButton";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -74,9 +73,9 @@ export default function SettingsPage() {
            
            <button 
              onClick={() => setActiveTab("billing")}
-             className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all border ${activeTab === "billing" ? "bg-cyan-500/10 text-white border-cyan-500/20 shadow-[0_0_20px_rgba(34,211,238,0.1)]" : "text-zinc-500 hover:bg-white/5 border-transparent"}`}
+             className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all border ${activeTab === "billing" ? "bg-emerald-500/10 text-white border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]" : "text-zinc-500 hover:bg-white/5 border-transparent"}`}
            >
-             <CreditCard className={`w-4 h-4 ${activeTab === "billing" ? "text-cyan-400" : ""}`} /> Subscription
+             <CreditCard className={`w-4 h-4 ${activeTab === "billing" ? "text-emerald-400" : ""}`} /> Subscription
            </button>
            
            <button 
@@ -109,10 +108,10 @@ export default function SettingsPage() {
           {activeTab === "profile" && (
             <div className="p-8 rounded-[2.5rem] border border-white/5 bg-zinc-950/50 shadow-xl animate-in fade-in duration-500">
                <div className="flex items-center gap-6 mb-8">
-                  <img src={user.imageUrl} className="w-20 h-20 rounded-full border-2 border-cyan-500/20" />
+                  <img src={user.imageUrl} className="w-20 h-20 rounded-full border-2 border-cyan-500/20" alt="Profile" />
                   <div>
                     <h3 className="text-xl font-black text-white">{user.fullName}</h3>
-                    <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold mt-1">Free Tier Explorer</p>
+                    <p className="text-emerald-500 text-xs uppercase tracking-widest font-bold mt-1">Premium Member</p>
                   </div>
                </div>
 
@@ -146,22 +145,25 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* --- SUBSCRIPTION TAB --- */}
+          {/* --- SUBSCRIPTION TAB (DIRECT PRO VIEW) --- */}
           {activeTab === "billing" && (
-            <div className="p-8 rounded-[2.5rem] border border-cyan-500/20 bg-gradient-to-br from-cyan-950/20 to-zinc-950 shadow-xl animate-in fade-in duration-500">
+            <div className="p-8 rounded-[2.5rem] border border-emerald-500/30 bg-gradient-to-br from-emerald-950/20 to-zinc-950 shadow-xl animate-in fade-in duration-500">
                <div className="flex justify-between items-center mb-8">
-                 <h3 className="text-xs font-bold uppercase tracking-widest text-cyan-400">Subscription Status</h3>
-                 <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">Trial Active</span>
+                 <h3 className="text-xs font-bold uppercase tracking-widest text-emerald-400">Subscription Status</h3>
+                 <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-500/30">
+                   PRO ACTIVE
+                 </span>
                </div>
                <div className="space-y-6">
                   <div>
-                    <p className="text-3xl font-black text-white italic">Free Evolution</p>
-                    <p className="text-xs text-zinc-500 mt-2 leading-relaxed">You are currently on the free version. Upgrade to <span className="text-white font-bold">GlowryAI Pro</span> to unlock unlimited biometric scans and detailed AI skincare routines.</p>
+                    <p className="text-3xl font-black text-white italic">GlowryAI Pro</p>
+                    <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
+                      You are currently on the Pro version. Enjoy unlimited biometric scans and detailed AI skincare routines.
+                    </p>
                   </div>
-                  <UpgradeButton
-                    title="Upgrade to Pro ($9.99/mo)"
-                    className="w-full py-4 rounded-2xl bg-white text-black font-black uppercase tracking-widest text-xs hover:bg-cyan-400 transition-colors shadow-[0_10px_20px_rgba(255,255,255,0.05)]"
-                  />
+                  <button className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-all shadow-[0_10px_20px_rgba(0,0,0,0.2)]">
+                    MANAGE SUBSCRIPTION
+                  </button>
                </div>
             </div>
           )}
@@ -202,10 +204,12 @@ export default function SettingsPage() {
           {/* --- PRIVACY TAB --- */}
           {activeTab === "security" && (
             <div className="space-y-6 animate-in fade-in duration-500">
+              
+              {/* Privacy Policy Block */}
               <div className="p-8 rounded-[2.5rem] border border-white/5 bg-zinc-950/50">
                  <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-4">Biometric Data Policy</h3>
                  <p className="text-sm text-zinc-400 leading-relaxed">
-                    All skin analysis photos are processed with <span className="text-white font-bold">End-to-End Encryption</span>. We do not sell your biometric signatures to third parties. Your aesthetic data belongs entirely to you and is highly secured.
+                   All skin analysis photos are processed with <span className="text-white font-bold">End-to-End Encryption</span>. We do not sell your biometric signatures to third parties. Your aesthetic data belongs entirely to you and is highly secured.
                  </p>
                  
                  <div className="mt-8 flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 px-5 py-4 rounded-2xl w-fit">
@@ -213,6 +217,25 @@ export default function SettingsPage() {
                     <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">100% Privacy Protected</span>
                  </div>
               </div>
+
+              {/* Danger Zone: Manual Deletion Request */}
+              <div className="p-8 rounded-[2.5rem] border border-rose-500/20 bg-rose-950/10">
+                 <h3 className="text-xs font-bold uppercase tracking-widest text-rose-500 mb-4">Danger Zone</h3>
+                 <p className="text-sm text-zinc-400 leading-relaxed mb-6">
+                   To comply with GDPR and privacy rights, you can request the permanent deletion of your account and all associated biometric data (scans) from our servers.
+                 </p>
+                 
+                 <button 
+                    onClick={() => {
+                      const userEmail = user.primaryEmailAddress?.emailAddress || "your registered email";
+                      window.location.href = `mailto:support@yourdomain.com?subject=Data Deletion Request&body=Hello GlowryAI Team,%0D%0A%0D%0AI would like to request the complete deletion of my account and all associated biometric data (scans) from your database.%0D%0A%0D%0AMy registered email is: ${userEmail}`;
+                    }}
+                    className="w-full py-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 font-black uppercase tracking-widest text-xs hover:bg-rose-500/20 transition-all shadow-[0_10px_20px_rgba(244,63,94,0.1)]"
+                 >
+                   Request Data Deletion
+                 </button>
+              </div>
+
             </div>
           )}
 

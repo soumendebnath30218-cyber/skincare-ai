@@ -39,7 +39,12 @@ export default function ProgressMapPage() {
           .select("*")
           .eq("user_id", user.id)
           .order("created_at", { ascending: true });
-        if (data && !error) setHistory(data);
+          
+        // 🌟 FIX: ফিল্টার করে শুধু ০ থেকে ১০ এর ভেতরের আসল স্কোরগুলো নেওয়া হচ্ছে 🌟
+        if (data && !error) {
+          const validData = data.filter((scan) => scan.score > 0 && scan.score <= 10);
+          setHistory(validData);
+        }
       } catch (err) {
         console.error("Error:", err);
       } finally {

@@ -426,7 +426,7 @@ export default function DashboardPage() {
            </div>
            <h2 className="mb-2 text-2xl font-bold text-white">No Reports Yet</h2>
            <p className="mb-8 text-sm text-zinc-400">Start your first biometric scan to track your glow-up journey.</p>
-           <Link href="/dashboard/scanner" className="inline-block w-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 px-8 py-4 font-bold text-black transition-transform hover:scale-105">
+           <Link href="/" className="inline-block w-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 px-8 py-4 font-bold text-black transition-transform hover:scale-105">
               Start Your First Scan
            </Link>
         </div>
@@ -600,7 +600,7 @@ export default function DashboardPage() {
                 </button>
               ))}
             </div>
-            <Link href="/dashboard/scanner" className="mt-8 block w-full text-center py-4 rounded-xl border border-dashed border-white/10 text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-cyan-400 hover:border-cyan-400/50 transition-all hover:bg-cyan-500/5">
+            <Link href="/" className="mt-8 block w-full text-center py-4 rounded-xl border border-dashed border-white/10 text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-cyan-400 hover:border-cyan-400/50 transition-all hover:bg-cyan-500/5">
                + Retake Biometric Scan
             </Link>
           </div>

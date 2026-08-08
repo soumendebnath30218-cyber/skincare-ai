@@ -904,14 +904,14 @@ export default function Home() {
                     <h3 className="text-2xl font-black bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text text-transparent mb-2">GlowryAI Pro</h3>
                     <p className="text-sm text-zinc-400">Unlock your ultimate aesthetic potential.</p>
                     <div className="mt-6 flex flex-col">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm text-zinc-500 font-bold line-through">$14.99</span>
-                        <span className="text-[10px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-md">60% Off Limited Time</span>
-                      </div>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-4xl font-black text-white">$5.99</span>
-                        <span className="text-emerald-500/70 text-sm font-bold uppercase tracking-widest">/ 30 Days</span>
-                      </div>
+                    <div className="flex items-center gap-2 mb-1">
+          <span className="text-sm text-zinc-500 font-bold line-through">$19.99</span>
+          <span className="text-[10px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-md">50% Off Limited Time</span>
+        </div>
+        <div className="flex items-baseline gap-1">
+          <span className="text-4xl font-black text-white">$9.99</span>
+          <span className="text-emerald-500/70 text-sm font-bold uppercase tracking-widest">/ 30 Days</span>
+        </div>
                     </div>
                   </div>
 
@@ -1105,7 +1105,8 @@ export default function Home() {
                                   </div>
                                 </div>
                                 <UpgradeButton
-                                  title="Unlock Everything - $5.99"
+
+                                  title="Unlock Everything - $9.99"
                                   className="group relative inline-flex w-full items-center justify-center rounded-2xl py-4 text-sm font-black text-slate-950 bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 hover:scale-[1.02] active:scale-[0.98] uppercase tracking-widest shadow-[0_0_25px_rgba(34,211,238,0.6)]"
                                 />
                               </div>
@@ -1117,10 +1118,9 @@ export default function Home() {
                             <div className="max-h-[min(280px,45vh)] overflow-y-auto text-sm leading-relaxed whitespace-pre-wrap text-zinc-300">{skinAnalysis?.raw}</div>
                             <div className="mt-6 flex flex-col items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5 text-center">
                               <p className="text-sm font-medium text-emerald-200/90">Want the 30-Day Glow-Up Blueprint?</p><p className="text-xs text-zinc-500">Unlock step-by-step AM/PM routines and product suggestions.</p>
-                              <UpgradeButton
-                                title="$5.99 Unlock Report"
+                                title="$9.99 Unlock Report"
                                 className="mt-2 inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 px-6 py-3 text-sm font-semibold text-zinc-950 shadow-[0_0_24px_rgba(52,211,153,0.25)] hover:brightness-110"
-                              />
+                              /
                             </div>
                           </div>
                         )}

@@ -45,8 +45,8 @@ const FEATURES = [
         />
       </svg>
     ),
-    title: "Unlimited AI Generations",
-    desc: "Scan as often as your routine changes.",
+    title: "Advanced Pro Diagnostics",
+    desc: "Unlock deep skin insights and track your daily evolution with premium AI precision.",
   },
   {
     icon: (
@@ -80,7 +80,6 @@ const AVATARS = [
 ];
 
 export default function PricingPage() {
-  const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -92,13 +91,6 @@ export default function PricingPage() {
   };
 
   const resetTilt = () => setTilt({ x: 0, y: 0 });
-
-  const price = billing === "monthly" ? "9.99" : "79";
-  const cadence = billing === "monthly" ? "/mo" : "/yr";
-  const ctaLabel =
-    billing === "monthly"
-      ? "Start your Pro glow — $9.99/mo"
-      : "Start your Pro glow — $79/yr";
 
   return (
     <div
@@ -154,7 +146,7 @@ export default function PricingPage() {
             See your skin the way our AI does.
           </h1>
           <p className="text-center text-sm text-[#9CA79D] mb-6">
-            Precise ratios, unlimited scans, zero waiting.
+            Advanced AI analysis, daily biometric tracking, instant results.
           </p>
 
           {/* Social proof */}
@@ -171,46 +163,17 @@ export default function PricingPage() {
               ))}
             </div>
             <span className="text-xs text-[#8B9A91]">
-              12,400+ users already glowing
+            Join the AI-powered skincare revolution
             </span>
-          </div>
-
-          {/* Billing toggle */}
-          <div className="flex items-center justify-center mb-7">
-            <div className="relative flex bg-white/5 border border-white/10 rounded-full p-1 text-xs">
-              <button
-                onClick={() => setBilling("monthly")}
-                className={`relative z-10 px-4 py-1.5 rounded-full transition-colors ${
-                  billing === "monthly" ? "text-[#0B0F0D]" : "text-[#9CA79D]"
-                }`}
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => setBilling("yearly")}
-                className={`relative z-10 px-4 py-1.5 rounded-full transition-colors ${
-                  billing === "yearly" ? "text-[#0B0F0D]" : "text-[#9CA79D]"
-                }`}
-              >
-                Yearly · save 34%
-              </button>
-              <span
-                className="absolute top-1 bottom-1 rounded-full bg-[#E8A94C] transition-all duration-300"
-                style={{
-                  left: billing === "monthly" ? "4px" : "50%",
-                  width: "calc(50% - 4px)",
-                }}
-              />
-            </div>
           </div>
 
           {/* Price */}
           <div className="flex items-end justify-center gap-1 mb-8">
             <span className="text-lg text-[#9CA79D] mb-2">$</span>
             <span className="font-[family-name:var(--font-display)] text-6xl font-semibold text-[#F5F0E8] tabular-nums">
-              {price}
+              9.99
             </span>
-            <span className="text-sm text-[#9CA79D] mb-2">{cadence}</span>
+            <span className="text-sm text-[#9CA79D] mb-2">/mo</span>
           </div>
 
           {/* Features */}
@@ -233,7 +196,7 @@ export default function PricingPage() {
           {/* CTA */}
           <div className="cta-glow rounded-xl">
             <UpgradeButton
-              title={ctaLabel}
+              title="Start your Pro glow — $9.99/mo"
               className="w-full bg-gradient-to-r from-[#E8A94C] to-[#FFD98A] hover:from-[#FFD98A] hover:to-[#E8A94C] text-[#0B0F0D] px-8 py-4 rounded-xl font-semibold text-base transition-all duration-300"
             />
           </div>

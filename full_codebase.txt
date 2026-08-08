@@ -308,7 +308,7 @@ export async function POST(request: Request) {
 
     if (userRecord?.is_subscribed) {
       console.log("User is already subscribed, redirecting to pro-dashboard.");
-      return NextResponse.json({ url: '/pro-dashboard' });
+      return NextResponse.json({ url: '/dashboard' });
     }
 
     const dodoApiKey = process.env.DODO_API_KEY;
@@ -3460,13 +3460,14 @@ export default function Home() {
                     <p className="text-sm text-zinc-400">Unlock your ultimate aesthetic potential.</p>
                     <div className="mt-6 flex flex-col">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm text-zinc-500 font-bold line-through">$14.99</span>
-                        <span className="text-[10px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-md">60% Off Limited Time</span>
-                      </div>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-4xl font-black text-white">$5.99</span>
-                        <span className="text-emerald-500/70 text-sm font-bold uppercase tracking-widest">/ 30 Days</span>
-                      </div>
+<div className="flex items-center gap-2 mb-1">
+          <span className="text-sm text-zinc-500 font-bold line-through">$19.99</span>
+          <span className="text-[10px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-md">50% Off Limited Time</span>
+        </div>
+        <div className="flex items-baseline gap-1">
+          <span className="text-4xl font-black text-white">$9.99</span>
+          <span className="text-emerald-500/70 text-sm font-bold uppercase tracking-widest">/ 30 Days</span>
+        </div>
                     </div>
                   </div>
 
@@ -5392,12 +5393,12 @@ export default function SupportPage() {
             <div className="mt-8 grid grid-cols-2 gap-4">
               {/* Email Us Box - Updated with Mailto link */}
               <a 
-                href="mailto:soumendebnath702@gmail.com" 
+                href="mailto:glowryaiofficial@gmail.com" 
                 className="bg-white/5 border border-white/5 rounded-2xl p-5 flex flex-col items-center justify-center text-center hover:bg-white/10 transition-colors cursor-pointer group"
               >
                 <Mail className="w-6 h-6 text-cyan-400 mb-3 group-hover:scale-110 transition-transform" />
                 <h3 className="text-white font-bold text-sm">Email Us</h3>
-                <p className="text-[10px] sm:text-xs text-zinc-500 mt-1 break-all px-2">soumendebnath702@gmail.com</p>
+                <p className="text-[10px] sm:text-xs text-zinc-500 mt-1 break-all px-2">glowryaiofficial@gmail.com</p>
               </a>
 
               {/* Secure Portal Box */}
