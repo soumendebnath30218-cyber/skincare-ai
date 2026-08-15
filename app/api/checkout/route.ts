@@ -23,7 +23,9 @@ export async function POST(request: Request) {
     }
 
     const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
-    const { data: userRecord, error: supabaseError } = await supabase.from('users').select('is_subscribed').eq('user_id', userId).single();
+    
+    // এই লাইনে .single() এর বদলে .maybeSingle() দেওয়া হয়েছে
+    const { data: userRecord, error: supabaseError } = await supabase.from('users').select('is_subscribed').eq('user_id', userId).maybeSingle();
 
     if (supabaseError) {
       console.error("Supabase Error fetching user record:", supabaseError);
@@ -44,10 +46,8 @@ export async function POST(request: Request) {
     const productId = process.env.NEXT_PUBLIC_DODO_PRODUCT_ID || 'pdt_0NhPHbZJ8Y9jhfmkRl7Mr';
     console.log("Using Dodo Product ID:", productId);
 
-    // env var থেকে raw value নিয়ে trim করা হচ্ছে, extra space/newline থাকলে যাতে বাদ যায়
     const rawReturnUrl = (process.env.NEXT_PUBLIC_DODO_RETURN_URL || 'http://localhost:3000/checkout-redirect').trim();
 
-    // URL valid কিনা সেইটা এখানেই যাচাই করা হচ্ছে, Dodo পর্যন্ত পাঠানোর আগেই
     let returnUrl: string;
     try {
       returnUrl = new URL(rawReturnUrl).toString();
@@ -61,7 +61,6 @@ export async function POST(request: Request) {
 
     console.log("Using Dodo Return URL:", returnUrl);
 
-    // Dodo-র সঠিক পেলোড স্ট্রাকচার
     const dodoPayload = {
       product_cart: [{ product_id: productId, quantity: 1 }],
       customer: { email: email },
