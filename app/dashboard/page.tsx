@@ -201,7 +201,15 @@ export default function DashboardPage() {
     if (!user || isSaving) return;
     setIsSaving(true);
     try {
-      const scanData: any = {
+      const scanData: {
+        user_id: string;
+        score: number;
+        problems: string[];
+        symmetry_score: number | null;
+        golden_ratio_match: number | null;
+        melanin_evenness: string | null;
+        glow_index?: number;
+      } = {
         user_id: user.id,
         score: newAnalysis.score || 0,
         problems: newAnalysis.basic_flaws || [],
@@ -596,7 +604,7 @@ export default function DashboardPage() {
                     <div className={task.completed ? "text-emerald-400" : "text-zinc-500"}>{task.icon}</div>
                     <span className={`text-xs font-medium ${task.completed ? "text-emerald-400/80 line-through" : "text-zinc-300"}`}>{task.text}</span>
                   </div>
-                  {task.completed ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Circle className="w-4 h-4 text-zinc-800" />}\
+                  {task.completed ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Circle className="w-4 h-4 text-zinc-800" />}
                 </button>
               ))}
             </div>

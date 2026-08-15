@@ -64,7 +64,7 @@ export default function NaturalRoutinePage() {
                     const parsedLocal = JSON.parse(savedAnalysis);
                     if (parsedLocal.routine) aiRoutine = parsedLocal.routine;
                     else if (parsedLocal.raw) {
-                        let cleanText = parsedLocal.raw.replace(/[\`]{3}json/gi, "").replace(/[\`]{3}/g, "").trim();
+                        const cleanText = parsedLocal.raw.replace(/[\`]{3}json/gi, "").replace(/[\`]{3}/g, "").trim();
                         const parsedRaw = JSON.parse(cleanText);
                         if (parsedRaw.routine) aiRoutine = parsedRaw.routine;
                     }
@@ -90,7 +90,7 @@ export default function NaturalRoutinePage() {
 
   // 🌟 AI-এর অরিজিনাল রুটিন থেকে Preparation Steps খুঁজে বের করার স্মার্ট লজিক 🌟
   const getRealPreparationSteps = (item: any) => {
-    let dbSteps = item.preparation || item.steps || item.preparation_steps || item.instructions;
+    const dbSteps = item.preparation || item.steps || item.preparation_steps || item.instructions;
     if (Array.isArray(dbSteps) && dbSteps.length > 0) return dbSteps;
     if (typeof dbSteps === 'string') return dbSteps.split('\n').filter((s: string) => s.trim() !== '');
 
@@ -267,7 +267,7 @@ export default function NaturalRoutinePage() {
                 <span className="text-xs font-bold text-white uppercase tracking-widest">Pro Tip</span>
               </div>
               <p className="text-sm text-emerald-100/80 leading-relaxed italic">
-                "Consistency is the key to natural healing. Natural ingredients take 14-21 days to show visible cellular changes. Trust the process."
+                &ldquo;Consistency is the key to natural healing. Natural ingredients take 14-21 days to show visible cellular changes. Trust the process.&rdquo;
               </p>
             </div>
           </div>

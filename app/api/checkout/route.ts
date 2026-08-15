@@ -70,7 +70,6 @@ export async function POST(request: Request) {
     };
 
     console.log("Sending payload to Dodo:", JSON.stringify(dodoPayload, null, 2));
-    console.log("API Key starts with:", dodoApiKey.substring(0, 10));
 
     const response = await fetch('https://test.dodopayments.com/checkouts', {
       method: 'POST',

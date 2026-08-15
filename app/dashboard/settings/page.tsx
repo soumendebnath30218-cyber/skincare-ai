@@ -171,7 +171,7 @@ function ThreeJSBackground() {
       scene.add(torus2);
 
       let animId: number;
-      let startTime = performance.now();
+      const startTime = performance.now();
 
       const animate = () => {
         animId = requestAnimationFrame(animate);
@@ -507,7 +507,7 @@ async function hasVideoInputDevice(): Promise<boolean> {
 
 function parseAnalysisData(rawText: string): AnalysisResult {
   try {
-    let cleanText = rawText.replace(/\x60\x60\x60json/gi, "").replace(/\x60\x60\x60/g, "").trim();
+    const cleanText = rawText.replace(/\x60\x60\x60json/gi, "").replace(/\x60\x60\x60/g, "").trim();
     const parsed = JSON.parse(cleanText);
     if (parsed.score && parsed.basic_flaws) return parsed;
     return { raw: rawText };
@@ -665,7 +665,7 @@ export default function Home() {
     let animationFrameId: number;
     let particles: { x: number; y: number; radius: number; vx: number; vy: number; z: number }[] = [];
     const particleCount = 80;
-    let mouse = { x: -1000, y: -1000 };
+    const mouse = { x: -1000, y: -1000 };
     const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; initParticles(); };
     const initParticles = () => {
       particles = [];
@@ -1118,9 +1118,10 @@ export default function Home() {
                             <div className="max-h-[min(280px,45vh)] overflow-y-auto text-sm leading-relaxed whitespace-pre-wrap text-zinc-300">{skinAnalysis?.raw}</div>
                             <div className="mt-6 flex flex-col items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5 text-center">
                               <p className="text-sm font-medium text-emerald-200/90">Want the 30-Day Glow-Up Blueprint?</p><p className="text-xs text-zinc-500">Unlock step-by-step AM/PM routines and product suggestions.</p>
+                              <UpgradeButton
                                 title="$9.99 Unlock Report"
                                 className="mt-2 inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 px-6 py-3 text-sm font-semibold text-zinc-950 shadow-[0_0_24px_rgba(52,211,153,0.25)] hover:brightness-110"
-                              /
+                              />
                             </div>
                           </div>
                         )}

@@ -29,31 +29,6 @@ function Footer() {
   );
 }
 
-function CookieBanner() {
-  const [showBanner, setShowBanner] = useState(false);
-  useEffect(() => {
-    const consent = localStorage.getItem('cookieConsent');
-    if (!consent) setShowBanner(true);
-  }, []);
-  const handleAccept = () => {
-    localStorage.setItem('cookieConsent', 'true');
-    setShowBanner(false);
-  };
-  if (!showBanner) return null;
-  return (
-    <div className="fixed bottom-0 left-0 w-full bg-black/90 backdrop-blur-md border-t border-white/10 p-4 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-      <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-        <p className="text-gray-300 text-sm text-center sm:text-left">
-          We use cookies to improve your experience. By continuing, you agree to our <Link className="text-[#39ff14] underline hover:text-green-400" href="/public-privacy">Privacy Policy</Link>.
-        </p>
-        <button onClick={handleAccept} className="bg-[#39ff14] text-black px-6 py-2 rounded-full font-bold text-sm hover:bg-green-500 transition-all hover:scale-105 whitespace-nowrap shadow-[0_0_15px_rgba(57,255,20,0.4)]">
-          Got it!
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // ==========================================
 // 🌟 THREE.JS 3D ANIMATED BACKGROUND 🌟
 // ==========================================
@@ -170,7 +145,7 @@ function ThreeJSBackground() {
       scene.add(torus2);
 
       let animId: number;
-      let startTime = performance.now();
+      const startTime = performance.now();
 
       const animate = () => {
         animId = requestAnimationFrame(animate);
@@ -466,7 +441,7 @@ function SneakPeekSection({ onOpenPricing }: { onOpenPricing: () => void }) {
 // ==========================================
 
 type AfterCapturePhase = "setup" | "quiz" | "analyzing" | "result";
-type AnalyzeSkinResponse = { analysis?: string; error?: string; success?: boolean };
+type AnalyzeSkinResponse = { analysis?: string | Record<string, unknown>; error?: string; success?: boolean };
 type AnalysisResult = {
   score?: number;
   basic_flaws?: string[];
@@ -505,13 +480,20 @@ async function hasVideoInputDevice(): Promise<boolean> {
   catch { return true; }
 }
 
-function parseAnalysisData(rawText: string): AnalysisResult {
+function parseAnalysisData(rawText: string | Record<string, unknown>): AnalysisResult {
+  const text = typeof rawText === "string" ? rawText : JSON.stringify(rawText);
   try {
-    let cleanText = rawText.replace(/\x60\x60\x60json/gi, "").replace(/\x60\x60\x60/g, "").trim();
+    const cleanText = text.replace(/\x60\x60\x60json/gi, "").replace(/\x60\x60\x60/g, "").trim();
     const parsed = JSON.parse(cleanText);
-    if (parsed.score && parsed.basic_flaws) return parsed;
-    return { raw: rawText };
-  } catch (e) { return { raw: rawText }; }
+    if (parsed && typeof parsed === "object" && parsed.score != null) {
+      return {
+        score: Number(parsed.score),
+        basic_flaws: Array.isArray(parsed.issues) ? parsed.issues : (Array.isArray(parsed.basic_flaws) ? parsed.basic_flaws : []),
+        raw: text,
+      };
+    }
+    return { raw: text };
+  } catch (e) { return { raw: text }; }
 }
 
 // ==========================================
@@ -594,7 +576,7 @@ export default function Home() {
         return;
       }
 
-      setSkinAnalysis(parseAnalysisData(JSON.stringify(data.analysis)));
+      setSkinAnalysis(parseAnalysisData(data.analysis as string | Record<string, unknown>));
     } catch (e) { 
       if (!(e instanceof DOMException && e.name === "AbortError")) {
         setAnalysisError(SKIN_ANALYSIS_FAILURE_MESSAGE);
@@ -665,7 +647,7 @@ export default function Home() {
     let animationFrameId: number;
     let particles: { x: number; y: number; radius: number; vx: number; vy: number; z: number }[] = [];
     const particleCount = 80;
-    let mouse = { x: -1000, y: -1000 };
+    const mouse = { x: -1000, y: -1000 };
     const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; initParticles(); };
     const initParticles = () => {
       particles = [];
@@ -923,7 +905,7 @@ export default function Home() {
                       </li>
                       <li className="flex items-start gap-3">
                         <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                        <span><strong>Max Potential Roadmap:</strong> Exact biological strategies to help you reach your skin's maximum potential of <strong>9.6/10</strong>.</span>
+                        <span><strong>Max Potential Roadmap:</strong> Exact biological strategies to help you reach your skin&apos;s maximum potential of <strong>9.6/10</strong>.</span>
                       </li>
                       <li className="flex items-start gap-3">
                         <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
@@ -935,7 +917,7 @@ export default function Home() {
                       </li>
                       <li className="flex items-start gap-3">
                         <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                        <span><strong>30-Day Strict Journey:</strong> Exactly 30 scans for 30 consecutive days (1 scan/24 hrs). Miss a day, lose that day's scan forever.</span>
+                        <span><strong>30-Day Strict Journey:</strong> Exactly 30 scans for 30 consecutive days (1 scan/24 hrs). Miss a day, lose that day&apos;s scan forever.</span>
                       </li>
                       <li className="flex items-start gap-3">
                         <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
@@ -1118,9 +1100,10 @@ export default function Home() {
                             <div className="max-h-[min(280px,45vh)] overflow-y-auto text-sm leading-relaxed whitespace-pre-wrap text-zinc-300">{skinAnalysis?.raw}</div>
                             <div className="mt-6 flex flex-col items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5 text-center">
                               <p className="text-sm font-medium text-emerald-200/90">Want the 30-Day Glow-Up Blueprint?</p><p className="text-xs text-zinc-500">Unlock step-by-step AM/PM routines and product suggestions.</p>
+                              <UpgradeButton
                                 title="$9.99 Unlock Report"
                                 className="mt-2 inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 px-6 py-3 text-sm font-semibold text-zinc-950 shadow-[0_0_24px_rgba(52,211,153,0.25)] hover:brightness-110"
-                              /
+                              />
                             </div>
                           </div>
                         )}
@@ -1134,8 +1117,6 @@ export default function Home() {
           </div>
         </div>
       )}
-
-      <CookieBanner/>
 
       <style jsx global>{`
         @keyframes reverse-spin { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }

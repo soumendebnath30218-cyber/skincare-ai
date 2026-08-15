@@ -15,7 +15,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 type ScanData = {
   id: number;
   score: number;
-  problems: any; // 🌟 FIX: Changed from flaws to problems
+  problems: string[] | string | null; // 🌟 FIX: Changed from flaws to problems
   created_at: string;
 };
 

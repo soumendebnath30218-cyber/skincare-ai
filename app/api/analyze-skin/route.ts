@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 
-const IS_TESTING = true; 
+const IS_TESTING = false; 
 const SUBSCRIPTION_DURATION_MS = IS_TESTING ? 60 * 1000 : 32 * 24 * 60 * 60 * 1000;
 
 export async function POST(req: Request) {

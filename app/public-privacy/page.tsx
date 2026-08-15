@@ -15,7 +15,7 @@ export default function PublicPrivacyPolicy() {
 
           <section className="bg-white/5 p-6 rounded-2xl border border-white/10">
             <h2 className="text-xl font-semibold text-cyan-400 mb-3">2. Facial Image Policy</h2>
-            <p>Facial images are processed in real-time and deleted from our servers immediately after analysis to ensure maximum privacy. Your most recent scan is temporarily stored <strong className="text-white">locally on your own device's browser</strong> so you can view your results, and it is automatically deleted and replaced the next time you take a new scan.</p>
+            <p>Facial images are processed in real-time and deleted from our servers immediately after analysis to ensure maximum privacy. Your most recent scan is temporarily stored <strong className="text-white">locally on your own device&apos;s browser</strong> so you can view your results, and it is automatically deleted and replaced the next time you take a new scan.</p>
           </section>
 
           <section>

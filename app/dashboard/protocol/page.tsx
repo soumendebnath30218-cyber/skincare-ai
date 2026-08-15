@@ -111,7 +111,7 @@ export default function GlowProtocolPage() {
             <div className="grid md:grid-cols-2 gap-4">
               <div className="bg-black/40 rounded-2xl p-5 border border-white/5">
                 <h3 className="text-xs font-bold text-rose-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                  <Target className="w-4 h-4" /> Today's Focus
+                  <Target className="w-4 h-4" /> Today&apos;s Focus
                 </h3>
                 <ul className="space-y-3">
                   {todayProblems?.map((problem: string, idx: number) => (
@@ -124,7 +124,7 @@ export default function GlowProtocolPage() {
               
               <div className="bg-black/40 rounded-2xl p-5 border border-white/5">
                 <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4" /> TODAY'S EXTRA CARE
+                  <ShieldCheck className="w-4 h-4" /> TODAY&apos;S EXTRA CARE
                 </h3>
                 <p className="text-sm text-zinc-300 leading-relaxed">
                   Stick strictly to your 30-Day Natural Protocol below. Hydration and natural ingredients are your primary goals for today.

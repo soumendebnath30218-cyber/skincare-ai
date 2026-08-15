@@ -1,12 +1,20 @@
 import { NextResponse } from "next/server";
 import { clerkClient } from "@clerk/nextjs/server";
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import crypto from "node:crypto";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy client — created inside the handler so a missing env var cannot crash
+// `next build` at module evaluation time.
+let supabase: SupabaseClient | null = null;
+function getSupabase() {
+  if (!supabase) {
+    supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+  }
+  return supabase;
+}
 
 // একই event দুইবার process যাতে না হয় (Dodo at-least-once delivery করে, duplicate পাঠাতে পারে)
 const processedWebhookIds = new Set<string>();
@@ -48,15 +56,6 @@ export async function POST(req: Request) {
     const webhookTimestamp = req.headers.get("webhook-timestamp") || "";
     const webhookSignature = req.headers.get("webhook-signature") || "";
     const secret = process.env.DODO_WEBHOOK_SECRET;
-
-    // ============ DEBUG LINE — কাজ হলে পরে মুছে ফেলতে হবে ============
-    console.log(
-      "DEBUG SECRET - length:", secret?.length,
-      "| first5:", secret?.substring(0, 5),
-      "| last5:", secret?.substring((secret?.length || 5) - 5)
-    );
-    console.log("DEBUG - webhookId:", webhookId, "| timestamp:", webhookTimestamp, "| signatureHeader:", webhookSignature);
-    // ===================================================================
 
     if (!secret) {
       console.error("DODO_WEBHOOK_SECRET is not set.");
@@ -127,7 +126,7 @@ export async function POST(req: Request) {
     });
     console.log(`Clerk: User ${userId} isPro = ${shouldBeSubscribed}`);
 
-    const { data: updatedRows, error } = await supabase
+    const { data: updatedRows, error } = await getSupabase()
       .from('users')
       .update({ is_subscribed: shouldBeSubscribed })
       .eq('user_id', userId)

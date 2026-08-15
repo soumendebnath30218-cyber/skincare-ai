@@ -17,7 +17,7 @@ import { initializeMediaPipe, scanFaceWithMediaPipe } from '@/utils/mediaPipeHel
 import { calculateFaceScore } from '@/utils/faceMath';
 
 // 🌟 DEVELOPER TEST MODE 🌟
-const IS_TESTING = true; 
+const IS_TESTING = false; 
 const COOLDOWN_MS = IS_TESTING ? 60 * 1000 : 24 * 60 * 60 * 1000; 
 const MAX_SCANS = IS_TESTING ? 999 : 30; 
 const SUBSCRIPTION_DURATION_MS = IS_TESTING ? 30 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
@@ -27,7 +27,7 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 type AfterCapturePhase = "setup" | "quiz" | "analyzing" | "result";
-type AnalyzeSkinResponse = { analysis?: any; error?: string; success?: boolean; error_type?: string; message?: string };
+type AnalyzeSkinResponse = { analysis?: unknown; error?: string; success?: boolean; error_type?: string; message?: string };
 
 type AnalysisResult = {
   score?: number;
@@ -68,7 +68,7 @@ async function compressImageDataUrl(dataUrl: string, maxDimension = 1280, qualit
 
 function parseAnalysisData(rawText: string): AnalysisResult {
   try {
-    let cleanText = rawText.replace(/[\`]{3}json/gi, "").replace(/[\`]{3}/g, "").trim();
+    const cleanText = rawText.replace(/[\`]{3}json/gi, "").replace(/[\`]{3}/g, "").trim();
     const parsed = JSON.parse(cleanText);
     
     let finalRoutine = "Compiling 100% natural routine..."; 
@@ -401,9 +401,11 @@ export default function UploadPage() {
         return;
       }
       
-      let rawAiText = data.analysis ? data.analysis : data;
-      if (typeof rawAiText !== 'string') {
-          rawAiText = JSON.stringify(rawAiText);
+      let rawAiText: string;
+      if (typeof data.analysis === 'string') {
+        rawAiText = data.analysis;
+      } else {
+        rawAiText = JSON.stringify(data.analysis ?? data);
       }
       
       const parsedResult = parseAnalysisData(rawAiText.trim());
@@ -524,7 +526,7 @@ export default function UploadPage() {
 
   const handleUnlockReport = () => {
     if (!isSignedIn) {
-      openSignIn({ fallbackRedirectUrl: "/dashboard" } as any);
+      openSignIn({ fallbackRedirectUrl: "/dashboard" });
     } else {
       router.push("/dashboard");
     }

@@ -29,7 +29,7 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 type AfterCapturePhase = "setup" | "analyzing" | "result";
-type AnalyzeSkinResponse = { analysis?: any; error?: string; success?: boolean; error_type?: string; message?: string };
+type AnalyzeSkinResponse = { analysis?: unknown; error?: string; success?: boolean; error_type?: string; message?: string };
 
 type AnalysisResult = {
   score?: number;
@@ -70,7 +70,7 @@ async function compressImageDataUrl(dataUrl: string, maxDimension = 1280, qualit
 
 function parseAnalysisData(rawText: string): AnalysisResult {
   try {
-    let cleanText = rawText.replace(/[\`]{3}json/gi, "").replace(/[\`]{3}/g, "").trim();
+    const cleanText = rawText.replace(/[\`]{3}json/gi, "").replace(/[\`]{3}/g, "").trim();
     const parsed = JSON.parse(cleanText);
     
     let finalRoutine = "AM: Gentle Cleanser, Vitamin C, SPF. PM: Double Cleanse, Retinol, Moisturizer.";
@@ -379,9 +379,11 @@ export default function ScannerPage() {
         return;
       }
 
-      let rawAiText = data.analysis ? data.analysis : data;
-      if (typeof rawAiText !== 'string') {
-          rawAiText = JSON.stringify(rawAiText);
+      let rawAiText: string;
+      if (typeof data.analysis === 'string') {
+        rawAiText = data.analysis;
+      } else {
+        rawAiText = JSON.stringify(data.analysis ?? data);
       }
 
       const parsedData = parseAnalysisData(rawAiText.trim());

@@ -1,14 +1,14 @@
 // utils/faceMath.ts
 
 // দুটি পয়েন্টের দূরত্ব মাপার ফর্মুলা
-function getDistance(point1: any, point2: any) {
+function getDistance(point1: { x: number; y: number }, point2: { x: number; y: number }) {
     const dx = point1.x - point2.x;
     const dy = point1.y - point2.y;
     return Math.sqrt(dx * dx + dy * dy);
 }
 
 // সিমেট্রি এবং বেস স্কোর বের করার মেইন ফাংশন
-export function calculateFaceScore(landmarks: any[]) {
+export function calculateFaceScore(landmarks: Array<Array<{ x: number; y: number; z?: number }>>) {
     if (!landmarks || landmarks.length === 0) return { symmetry: 0, baseScore: 0 };
 
     const face = landmarks[0]; // প্রথম মুখের পয়েন্টগুলো
