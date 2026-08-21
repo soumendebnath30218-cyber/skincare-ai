@@ -50,10 +50,10 @@ export async function POST(req: Request) {
     const { id, email_addresses } = evt.data;
     const primaryEmail = email_addresses[0]?.email_address;
 
-    // Connect to Supabase
+    // Connect to Supabase using SERVICE_ROLE_KEY to bypass RLS policies
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
     // Insert user into Supabase users table
