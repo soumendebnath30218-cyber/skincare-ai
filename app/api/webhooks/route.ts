@@ -11,7 +11,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Please add WEBHOOK_SECRET from Clerk Dashboard to .env or Vercel' }, { status: 500 });
   }
 
-  // Get the headers from the request
   const svix_id = req.headers.get("svix-id");
   const svix_timestamp = req.headers.get("svix-timestamp");
   const svix_signature = req.headers.get("svix-signature");
@@ -21,15 +20,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Error occurred -- no svix headers' }, { status: 400 });
   }
 
-  // Get the body
-  const payload = await req.json();
-  const body = JSON.stringify(payload);
+  // IMPORTANT: raw text body use koro, json() na — signature raw bytes er upor verify hoy
+  const body = await req.text();
 
-  // Create a new Svix instance with your secret
   const wh = new Webhook(WEBHOOK_SECRET);
   let evt: WebhookEvent;
 
-  // Verify the payload
   try {
     evt = wh.verify(body, {
       "svix-id": svix_id,
@@ -41,34 +37,32 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Error verifying webhook' }, { status: 400 });
   }
 
-  // Handle the webhook event
   const eventType = evt.type;
 
   if (eventType === 'user.created') {
-    console.log("New user created in Clerk. Inserting into Supabase...");
-    
+    console.log("New user created in Clerk. Inserting/Updating into Supabase...");
+
     const { id, email_addresses } = evt.data;
     const primaryEmail = email_addresses[0]?.email_address;
 
-    // Connect to Supabase using SERVICE_ROLE_KEY to bypass RLS policies
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // Insert user into Supabase users table
-    const { error } = await supabase.from('users').insert({
+    // .insert() এর বদলে .upsert() ব্যবহার করা হলো যাতে ডুপ্লিকেট এরর না আসে
+    const { error } = await supabase.from('users').upsert({
       user_id: id,
       email: primaryEmail,
       is_subscribed: false
-    });
+    }, { onConflict: 'user_id' });
 
     if (error) {
-      console.error('Supabase Insert Error:', error);
-      return NextResponse.json({ error: 'Failed to insert user into database' }, { status: 500 });
+      console.error('Supabase Upsert Error:', error);
+      return NextResponse.json({ error: 'Failed to insert/update user into database' }, { status: 500 });
     }
-    
-    console.log(`User ${id} successfully inserted into Supabase!`);
+
+    console.log(`User ${id} successfully processed in Supabase!`);
   }
 
   return NextResponse.json({ message: 'Webhook processed successfully' }, { status: 200 });
